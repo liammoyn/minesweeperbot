@@ -58,13 +58,13 @@ const App = () => {
           onChange={({ target }) => setDisplayerId(target.value)}
         >
           <MenuItem value={"CONSOLE"}>Console</MenuItem>
-          {/* <MenuItem value={"REACT"}>React</MenuItem> */}
+          <MenuItem value={"REACT"}>React</MenuItem>
         </Select>
         <Button onClick={runMinesweeper} variant="outlined">
           Play Minesweeper
         </Button>
       </div>
-      {/* <div style={{ paddingTop: "50px"}}>
+      <div style={{ paddingTop: "50px"}}>
         {displayerId == "REACT" && (
           <div>
             <ReactDisplayerComp
@@ -72,7 +72,7 @@ const App = () => {
             />
           </div>
         )}
-      </div> */}
+      </div>
     </div>
   );
 }

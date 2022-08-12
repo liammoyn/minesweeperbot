@@ -2,16 +2,20 @@ import naivePlayer from "../players/naivePlayer";
 import { sleep } from "../utils/debugFuncs";
 import { Board, Player, Move, Space, Coord, Displayer } from "./types";
 
-const minesweeper = (cols: number, row: number, bombs: number, displayer: Displayer) => {
+const minesweeper = async (cols: number, row: number, bombs: number, displayer: Displayer) => {
     const player = naivePlayer;
 
     let board = getNewBoard(cols, row, bombs);
     
     while (["IN_PROGRESS", "NEW" ].includes(board.gameState)) {
-        const newBoard = runMove(displayer, board, player);
-        if (newBoard == null) { console.log("null board") }
+        const newBoard = await runMove(displayer, board, player);
+        
         if (newBoard == null || newBoard.gameState == "LOST") {
-            if (newBoard != null) { displayBoard(displayer, newBoard) }
+            if (newBoard != null) { 
+                displayBoard(displayer, newBoard)
+            } else {
+                console.log("null board")
+            }
             return "LOST"
         }
         board = newBoard
@@ -21,18 +25,18 @@ const minesweeper = (cols: number, row: number, bombs: number, displayer: Displa
 }
 
 
-const runMove = (displayer: Displayer, board: Board, player: Player): Board | null => {
+const runMove = async (displayer: Displayer, board: Board, player: Player): Promise<Board | null> => {
     // Display board
-    displayBoard(displayer, board)
-    const move: Move = makeMove(board, player);
+    await displayBoard(displayer, board)
+    const move: Move = await makeMove(board, player);
     return applyMove(board, move);
 }
 
-const displayBoard = (displayer: Displayer, board: Board) => {
-    displayer.displayBoard(board)
+const displayBoard = (displayer: Displayer, board: Board): Promise<void> => {
+    return displayer.displayBoard(board)
 }
 
-const makeMove = (board: Board, player: Player): Move => {
+const makeMove = (board: Board, player: Player): Promise<Move> => {
     return player.pickCell(board)
 }
 

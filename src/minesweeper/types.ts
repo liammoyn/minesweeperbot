@@ -1,10 +1,10 @@
 
 export interface Displayer {
-    displayBoard: (board: Board) => void;
+    displayBoard: (board: Board) => Promise<void>
 }
 
 export interface Player {
-    pickCell: (board: Board) => Move
+    pickCell: (board: Board) => Promise<Move>
 };
 
 export interface Coord {

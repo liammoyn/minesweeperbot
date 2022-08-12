@@ -23,6 +23,7 @@ const displayer: Displayer = {
     displayBoard: (board: Board) => {
         const gameString = getBoardString(board);
         console.log(gameString)
+        return Promise.resolve();
     }
 
 }
