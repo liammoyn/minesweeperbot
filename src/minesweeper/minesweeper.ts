@@ -2,9 +2,7 @@ import naivePlayer from "../players/naivePlayer";
 import { sleep } from "../utils/debugFuncs";
 import { Board, Player, Move, Space, Coord, Displayer } from "./types";
 
-const minesweeper = async (cols: number, row: number, bombs: number, displayer: Displayer) => {
-    const player = naivePlayer;
-
+const minesweeper = async (cols: number, row: number, bombs: number, displayer: Displayer, player: Player) => {
     let board = getNewBoard(cols, row, bombs);
     
     while (["IN_PROGRESS", "NEW" ].includes(board.gameState)) {
@@ -51,7 +49,7 @@ const applyMove = (board: Board, move: Move): Board | null => {
     const nextSpace = board.grid[row][col];
     if (nextSpace.isOpen) { 
         console.log(`Given space that's already open ${move.coord.col}, ${move.coord.row}`);
-        return null;
+        return board;
     }
     if (nextSpace.isBomb) {
         const newGrid = board.grid;

@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import './App.css';
 import consoleDisplayer from "./displayers/consoleDisplayer" 
+import naivePlayer from "./players/naivePlayer" 
 import reactDisplayer, { ReactDisplayerComp } from "./displayers/reactDisplayer"
 import minesweeper from './minesweeper/minesweeper';
 import { Button, MenuItem, Select, TextField } from '@mui/material';
-import './App.css';
-import { Board, Displayer } from './minesweeper/types';
+import { Board, Displayer, Player, Coord, Move } from './minesweeper/types';
+import userPlayer from './players/userPlayer';
 
 const App = () => {
   const [height, setHeight] = useState(5);
@@ -12,23 +14,61 @@ const App = () => {
   const [bombs, setBombs] = useState(5);
   const [displayerId, setDisplayerId] = useState("CONSOLE");
   const [displayer, setDisplayer] = useState<Displayer>(consoleDisplayer);
+  const [playerId, setPlayerId] = useState("NAIVE");
+  const [player, setPlayer] = useState<Player>(naivePlayer);
+
+  const [currentMoveResolve, setCurrentMoveResolve] = useState<(m: Move) => void>();
 
   const [board, setBoard] = useState<Board | null>(null);
 
   useEffect(() => {
+    const displayDelay = getDisplayDelay(playerId)
     switch (displayerId) {
       case "CONSOLE":
         setDisplayer(consoleDisplayer);
         break;
       case "REACT":
-        setDisplayer(reactDisplayer(setBoard));
+        setDisplayer(reactDisplayer(setBoard, displayDelay));
+        break;
     }
+  }, [displayerId, playerId])
 
-  }, [displayerId])
+  useEffect(() => {
+    switch (playerId) {
+      case "NAIVE":
+        setPlayer(naivePlayer);
+        break;
+      case "USER":
+        setPlayer(userPlayer(onUserMove))
+    }
+  }, [playerId])
 
   const runMinesweeper = () => {
     console.log(`Running with ${width} ${height} ${bombs}`)
-    minesweeper(width, height, bombs, displayer);
+    minesweeper(width, height, bombs, displayer, player);
+  }
+
+  const getDisplayDelay = (playerId: String): number => {
+    switch (playerId) {
+      case "NAIVE":
+        return 1000;
+      case "USER":
+        return 0;
+    }
+    return 1000;
+  }
+
+  const onUserMove = (): Promise<Move> => {
+    return new Promise((resolve, reject) => {
+      setCurrentMoveResolve(() => resolve);
+    })
+  }
+
+  const onCellClick = (coord: Coord) => {
+    const move: Move = { coord }
+    if (currentMoveResolve) {
+      currentMoveResolve(move)
+    }
   }
 
   return (
@@ -60,6 +100,14 @@ const App = () => {
           <MenuItem value={"CONSOLE"}>Console</MenuItem>
           <MenuItem value={"REACT"}>React</MenuItem>
         </Select>
+        <Select
+          label="Player"
+          value={playerId}
+          onChange={({ target }) => setPlayerId(target.value)}
+        >
+          <MenuItem value={"NAIVE"}>Naive</MenuItem>
+          <MenuItem value={"USER"}>User</MenuItem>
+        </Select>
         <Button onClick={runMinesweeper} variant="outlined">
           Play Minesweeper
         </Button>
@@ -69,6 +117,7 @@ const App = () => {
           <div>
             <ReactDisplayerComp
               board={board}
+              onCellClick={onCellClick}
             />
           </div>
         )}
