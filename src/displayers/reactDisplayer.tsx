@@ -76,11 +76,15 @@ export const ReactDisplayerComp = ({ board, onCellClick }: ReactDisplayerCompPro
     )
 }
 
-const reactDisplayer = (onBoardChange: (board: Board) => void, displayDelay: number): Displayer => {
+const reactDisplayer = (onBoardChange: (board: Board) => void, displayDelay: number, stepResolve: (() => Promise<void>) | null): Displayer => {
     return {
         displayBoard: (board: Board) => {
             onBoardChange(board);
-            return new Promise(resolve => setTimeout(resolve, displayDelay));
+            if (stepResolve) {
+                return stepResolve()
+            } else {
+                return new Promise(resolve => setTimeout(resolve, displayDelay));
+            }
         }
     }
 }

@@ -4,7 +4,7 @@ import consoleDisplayer from "./displayers/consoleDisplayer"
 import naivePlayer from "./players/naivePlayer" 
 import reactDisplayer, { ReactDisplayerComp } from "./displayers/reactDisplayer"
 import minesweeper from './minesweeper/minesweeper';
-import { Button, MenuItem, Select, TextField } from '@mui/material';
+import { Button, Checkbox, InputLabel, MenuItem, Select, TextField } from '@mui/material';
 import { Board, Displayer, Player, Coord, Move } from './minesweeper/types';
 import userPlayer from './players/userPlayer';
 import simplePlayer from './players/simplePlayer';
@@ -18,6 +18,9 @@ const App = () => {
   const [playerId, setPlayerId] = useState("SIMPLE");
   const [player, setPlayer] = useState<Player>(naivePlayer);
 
+  const [useStepper, setUseStepper] = useState<boolean>(false);
+  const [currentStepResolve, setCurrentStepResolve] = useState<() => void>();
+
   const [currentMoveResolve, setCurrentMoveResolve] = useState<(m: Move) => void>();
 
   const [board, setBoard] = useState<Board | null>(null);
@@ -29,10 +32,10 @@ const App = () => {
         setDisplayer(consoleDisplayer);
         break;
       case "REACT":
-        setDisplayer(reactDisplayer(setBoard, displayDelay));
+        setDisplayer(reactDisplayer(setBoard, displayDelay, useStepper ? onWaitForNextStep : null));
         break;
     }
-  }, [displayerId, playerId])
+  }, [displayerId, playerId, useStepper])
 
   useEffect(() => {
     switch (playerId) {
@@ -79,6 +82,18 @@ const App = () => {
     }
   }
 
+  const stepForward = () => {
+    if (currentStepResolve) {
+      currentStepResolve()
+    }
+  }
+
+  const onWaitForNextStep = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      setCurrentStepResolve(() => resolve);
+    })
+  }
+
   return (
     <div className="App" style={{ paddingTop: "50px" }}>
       <div>
@@ -117,6 +132,13 @@ const App = () => {
           <MenuItem value={"NAIVE"}>Naive</MenuItem>
           <MenuItem value={"SIMPLE"}>Simple</MenuItem>
         </Select>
+        <div>
+          <label>Use Stepper?</label>
+          <Checkbox
+            checked={useStepper}
+            onChange={({ target }) => setUseStepper(target.checked)}
+          />
+        </div>
         <Button onClick={runMinesweeper} variant="outlined">
           Play Minesweeper
         </Button>
@@ -128,6 +150,13 @@ const App = () => {
               board={board}
               onCellClick={onCellClick}
             />
+            {useStepper && (
+              <div style={{ paddingTop: "10px" }}>
+                <Button onClick={stepForward} variant="outlined">
+                  Step
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
