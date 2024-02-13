@@ -30,5 +30,24 @@ export const getAdjacentCoords = <T,> (coord: Coord, grid: T[][], predicate?: (c
     }, []);
 }
 
-
-
+export const getAdjacentTs = <T,> (coord: Coord, grid: T[][], predicate?: (item: T) => boolean): T[] => {
+    const cIdx = coord.col;
+    const rIdx = coord.row;
+    return [-1, 0, 1].reduce((acc: T[], rInc) => {
+        return [
+            ...acc,
+            ...[-1, 0, 1].reduce((acc: T[], cInc) => {
+                const adjCoord = { col: cIdx + cInc, row: rIdx + rInc }
+                const adjCell = onGrid(grid, adjCoord) ? grid[adjCoord.row][adjCoord.col] : null
+                if (rInc == 0 && cInc == 0 || adjCell == null || (predicate && !predicate(adjCell))) {
+                    return acc;
+                } else {
+                    return [
+                        ...acc,
+                        adjCell
+                    ]
+                }
+            }, [])
+        ]
+    }, []);
+}

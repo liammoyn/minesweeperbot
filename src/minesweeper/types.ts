@@ -22,6 +22,9 @@ export interface Space {
     isBomb: boolean,
     bombsNear: number,
     isFlagged: boolean,
+    r: number,
+    c: number
+    highlightColor: string | null,
 }
 
 export interface Board {

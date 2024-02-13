@@ -14,12 +14,25 @@ export const ReactDisplayerComp = ({ board, onCellClick }: ReactDisplayerCompPro
                 ? "red"
                 : "white" 
             : space.isFlagged
-                ? "#A55"
-                : "gray"
+                ? "#990"
+                : "#AAA"
+    }
+
+    const getBorderColor = (space: Space): string => {
+        return space.highlightColor == null ? "red" : space.highlightColor
     }
 
     const onSquareClick = (ridx: number, cidx: number, isRightClick: boolean) => {
         const boardSpace = board?.grid[ridx][cidx];
+        console.log(`{
+            row: ${ridx},
+            col: ${cidx},
+            isBomb: ${boardSpace?.isBomb},
+            isFlagged: ${boardSpace?.isFlagged},
+            isOpen: ${boardSpace?.isOpen},
+            bombsNear: ${boardSpace?.bombsNear},
+            highlightColor: ${boardSpace?.highlightColor},
+        }`)
         if (!boardSpace?.isOpen) {
             // Send event to parent that will run take turn
             onCellClick({ row: ridx, col: cidx }, isRightClick)
@@ -36,18 +49,24 @@ export const ReactDisplayerComp = ({ board, onCellClick }: ReactDisplayerCompPro
                     {row.map((space, cidx) => (
                         <div 
                             key={cidx}
-                            style={{ width: "30px", height: "30px", border: "1px solid red", backgroundColor: getSpaceColor(space) }}
+                            style={{
+                                width: "30px",
+                                height: "30px",
+                                border: `1px solid ${getBorderColor(space)}`,
+                                backgroundColor: getSpaceColor(space) }}
                             onClick={() => onSquareClick(ridx, cidx, false)}
                             onContextMenu={e => {e.preventDefault(); onSquareClick(ridx, cidx, true);}}
                         >
                             {
                                 space.isOpen 
                                 ? space.isBomb
-                                    ? "X"
-                                    : space.bombsNear 
-                                : space.isBomb
                                     ? "x"
-                                    : ""
+                                    : space.bombsNear 
+                                : space.isFlagged
+                                    ? "F"
+                                    : space.isBomb
+                                        ? "x"
+                                        : ""
                             }
                         </div>
                     ))}

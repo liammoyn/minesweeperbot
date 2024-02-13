@@ -26,11 +26,16 @@ const runMove = async (displayer: Displayer, board: Board, player: Player): Prom
     // Display board
     await displayBoard(displayer, board)
     const move: Move = await makeMove(board, player);
+    await displayBoard(displayer, board)
     return applyMove(board, move);
 }
 
 const displayBoard = (displayer: Displayer, board: Board): Promise<void> => {
-    return displayer.displayBoard(board)
+    // TODO: Used for displaying mutation of the board for highlight color
+    const reloadedBoard = {
+        ...board
+    }
+    return displayer.displayBoard(reloadedBoard)
 }
 
 const makeMove = (board: Board, player: Player): Promise<Move> => {
@@ -124,7 +129,11 @@ const generateGrid = (width: number, height: number, bombs: number): Space[][] =
     const spaceGrid = randomizedList.reduce((acc, cur, idx) => {
         const row = Math.floor(idx / width);
         const col = idx % width;
-        acc[row][col] = cur;
+        acc[row][col] = {
+            ...cur,
+            r: row,
+            c: col,
+        };
         return acc
     }, emptyGrid);
     const populateBombCounts = (grid: Space[][]): Space[][] => {

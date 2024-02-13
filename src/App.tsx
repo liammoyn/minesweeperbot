@@ -7,14 +7,15 @@ import minesweeper from './minesweeper/minesweeper';
 import { Button, MenuItem, Select, TextField } from '@mui/material';
 import { Board, Displayer, Player, Coord, Move } from './minesweeper/types';
 import userPlayer from './players/userPlayer';
+import simplePlayer from './players/simplePlayer';
 
 const App = () => {
   const [height, setHeight] = useState(5);
   const [width, setWidth] = useState(5);
   const [bombs, setBombs] = useState(5);
-  const [displayerId, setDisplayerId] = useState("CONSOLE");
+  const [displayerId, setDisplayerId] = useState("REACT");
   const [displayer, setDisplayer] = useState<Displayer>(consoleDisplayer);
-  const [playerId, setPlayerId] = useState("NAIVE");
+  const [playerId, setPlayerId] = useState("SIMPLE");
   const [player, setPlayer] = useState<Player>(naivePlayer);
 
   const [currentMoveResolve, setCurrentMoveResolve] = useState<(m: Move) => void>();
@@ -40,6 +41,10 @@ const App = () => {
         break;
       case "USER":
         setPlayer(userPlayer(onUserMove))
+        break;
+      case "SIMPLE":
+        setPlayer(simplePlayer())
+        break;
     }
   }, [playerId])
 
@@ -54,6 +59,8 @@ const App = () => {
         return 1000;
       case "USER":
         return 0;
+      case "SIMPLE":
+        return 1000;
     }
     return 1000;
   }
@@ -106,8 +113,9 @@ const App = () => {
           value={playerId}
           onChange={({ target }) => setPlayerId(target.value)}
         >
-          <MenuItem value={"NAIVE"}>Naive</MenuItem>
           <MenuItem value={"USER"}>User</MenuItem>
+          <MenuItem value={"NAIVE"}>Naive</MenuItem>
+          <MenuItem value={"SIMPLE"}>Simple</MenuItem>
         </Select>
         <Button onClick={runMinesweeper} variant="outlined">
           Play Minesweeper
