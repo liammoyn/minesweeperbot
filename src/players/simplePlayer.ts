@@ -6,7 +6,8 @@ import { getAdjacentCoords, getAdjacentTs } from "../utils/gridUtils";
  * Does not store state from move to move.
  * Highlights moves and numbers that are on the unknown edge.
  * Flags squares that must be bombs.
- * Does not look for squares that must not be bombs.
+ * Pops squares that must not be bombs.
+ * Picks a tile from the edge at random otherwise.
  */
 const simplePlayer = (): Player => {
 
@@ -61,7 +62,8 @@ const simplePlayer = (): Player => {
 
 
             if (nextMove == null) {
-                nextMove = { coord: potentialMoves[0], action: "POP" }
+                const coord = potentialMoves[Math.floor(potentialMoves.length / 2)]
+                nextMove = { coord: coord, action: "POP" }
             }
             return new Promise(res => {
                 setTimeout(() => res(nextMove!!), 1000)
