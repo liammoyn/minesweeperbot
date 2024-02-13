@@ -13,13 +13,15 @@ export interface Coord {
 }
 
 export interface Move {
-    coord: Coord | null
+    coord: Coord | null,
+    action: "POP" | "FLAG"
 }
 
 export interface Space {
     isOpen: boolean,
     isBomb: boolean,
-    bombsNear?: number,
+    bombsNear: number,
+    isFlagged: boolean,
 }
 
 export interface Board {

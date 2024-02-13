@@ -48,7 +48,7 @@ const App = () => {
     minesweeper(width, height, bombs, displayer, player);
   }
 
-  const getDisplayDelay = (playerId: String): number => {
+  const getDisplayDelay = (playerId: string): number => {
     switch (playerId) {
       case "NAIVE":
         return 1000;
@@ -64,8 +64,9 @@ const App = () => {
     })
   }
 
-  const onCellClick = (coord: Coord) => {
-    const move: Move = { coord }
+  const onCellClick = (coord: Coord, isRightClick: boolean) => {
+    const action = isRightClick ? "FLAG" : "POP";
+    const move: Move = { coord, action }
     if (currentMoveResolve) {
       currentMoveResolve(move)
     }

@@ -11,7 +11,7 @@ const player: Player = {
             } : null;
         }, null);
         if (coord == null) { console.log("Null move") }
-        return Promise.resolve({ coord })
+        return Promise.resolve({ coord, action: "POP" })
     }
 }
 

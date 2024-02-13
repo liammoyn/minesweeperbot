@@ -3,7 +3,7 @@ import { Board, Displayer, Space, Coord } from "../minesweeper/types";
 
 interface ReactDisplayerCompProps {
     board: Board | null,
-    onCellClick: (coord: Coord) => void,
+    onCellClick: (coord: Coord, isRightClick: boolean) => void,
 }
 
 export const ReactDisplayerComp = ({ board, onCellClick }: ReactDisplayerCompProps) => {
@@ -13,14 +13,16 @@ export const ReactDisplayerComp = ({ board, onCellClick }: ReactDisplayerCompPro
             ? space.isBomb
                 ? "red"
                 : "white" 
-            : "gray"
+            : space.isFlagged
+                ? "#A55"
+                : "gray"
     }
 
-    const onSquareClick = (ridx: number, cidx: number) => {
+    const onSquareClick = (ridx: number, cidx: number, isRightClick: boolean) => {
         const boardSpace = board?.grid[ridx][cidx];
         if (!boardSpace?.isOpen) {
             // Send event to parent that will run take turn
-            onCellClick({ row: ridx, col: cidx })
+            onCellClick({ row: ridx, col: cidx }, isRightClick)
         }
     }
 
@@ -35,7 +37,8 @@ export const ReactDisplayerComp = ({ board, onCellClick }: ReactDisplayerCompPro
                         <div 
                             key={cidx}
                             style={{ width: "30px", height: "30px", border: "1px solid red", backgroundColor: getSpaceColor(space) }}
-                            onClick={() => onSquareClick(ridx, cidx)}
+                            onClick={() => onSquareClick(ridx, cidx, false)}
+                            onContextMenu={e => {e.preventDefault(); onSquareClick(ridx, cidx, true);}}
                         >
                             {
                                 space.isOpen 

@@ -1,6 +1,6 @@
 import { Board, Displayer } from "../minesweeper/types";
 
-export const getBoardString = (board: Board): String => {
+export const getBoardString = (board: Board): string => {
     const gridString = board.grid.reduce((acc, row, rdx) => {
         const rowString = row.reduce((acc, space, cdx) => {
             const spaceString = space.isOpen 

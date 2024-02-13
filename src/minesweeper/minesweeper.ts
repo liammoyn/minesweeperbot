@@ -1,5 +1,4 @@
-import naivePlayer from "../players/naivePlayer";
-import { sleep } from "../utils/debugFuncs";
+import { getAdjacentCoords, onGrid } from "../utils/gridUtils";
 import { Board, Player, Move, Space, Coord, Displayer } from "./types";
 
 const minesweeper = async (cols: number, row: number, bombs: number, displayer: Displayer, player: Player) => {
@@ -39,8 +38,6 @@ const makeMove = (board: Board, player: Player): Promise<Move> => {
 }
 
 const applyMove = (board: Board, move: Move): Board | null => {
-    // TODO: If first move, don't allow a loss
-
     if (move?.coord == null || !onGrid(board.grid, move.coord)) {
         console.log(`Given coord not on grid ${move?.coord?.col}, ${move?.coord?.row}`)
         return null;
@@ -51,6 +48,17 @@ const applyMove = (board: Board, move: Move): Board | null => {
         console.log(`Given space that's already open ${move.coord.col}, ${move.coord.row}`);
         return board;
     }
+
+    if (move.action == "FLAG") {
+        const newGrid = board.grid;
+        newGrid[row][col].isFlagged = !nextSpace.isFlagged;
+        return {
+            ...board,
+            grid: newGrid,
+        }
+    }
+
+    // TODO: If first move, don't allow a loss
     if (nextSpace.isBomb) {
         const newGrid = board.grid;
         newGrid[row][col].isOpen = true;
@@ -70,14 +78,8 @@ const applyMove = (board: Board, move: Move): Board | null => {
         newGrid[next.row][next.col].isOpen = true;
         let newCoords: Coord[] = []
         if (newGrid[next.row][next.col]?.bombsNear == 0) {
-            newCoords = [-1, 0, 1].reduce((acc: Coord[], r) => {
-                return [...acc, ...[-1, 0, 1].reduce((acc: Coord[], c) => {
-                    const nextCoord = (r == 0 && c == 0) ? null : { row: next.row + r, col: next.col + c};
-                    // Add to pop queue if not the space were evaluating now, the space is on the board, and the space is unopened
-                    const addToQueue = nextCoord != null && onGrid(newGrid, nextCoord) && !newGrid[nextCoord.row][nextCoord.col].isOpen
-                    return addToQueue ? [ ...acc, nextCoord ] : acc
-                }, [])]
-            }, []);
+            const adjacentCoords = getAdjacentCoords(next, newGrid);
+            newCoords = adjacentCoords.filter(coord => !newGrid[coord.row][coord.col].isOpen)
         }
         newCoords.forEach(coord => { queue.push(coord) });
     }
@@ -95,15 +97,10 @@ const applyMove = (board: Board, move: Move): Board | null => {
     };
 }
 
-const onGrid = <T,> (grid: T[][], coord: Coord): Boolean => {
-    const { row, col } = coord;
-    return col >= 0 && row >= 0 && row < grid.length && col < grid[row].length;
-}
-
 const generateGrid = (width: number, height: number, bombs: number): Space[][] => {
     const totalSpaces = width * height;
     const spaceList: Space[] = new Array(totalSpaces)
-        .fill({ isOpen: false, isBomb: false })
+        .fill({ isOpen: false, isBomb: false, isFlagged: false })
         .map((s, idx) => {
             return (idx < bombs) ? 
                 {
@@ -135,11 +132,8 @@ const generateGrid = (width: number, height: number, bombs: number): Space[][] =
             return row.map((space, cIdx) => {
                 let bombCount = 0;
                 if (!space.isBomb) {
-                    bombCount = [-1, 0, 1].reduce((acc, r) => acc + [-1, 0, 1].reduce((acc, c) => {
-                        const isOnGrid = onGrid(spaceGrid, { col: cIdx + c, row: rIdx + r })
-                        const inc = (c == 0 && r == 0 || !isOnGrid) || !grid[rIdx + r][cIdx + c].isBomb ? 0 : 1;
-                        return acc + inc;
-                    }, 0), 0);
+                    const adjacentCoords = getAdjacentCoords({ col: cIdx, row: rIdx }, grid);
+                    bombCount = adjacentCoords.reduce((acc, coord) => acc + (grid[coord.row][coord.col].isBomb ? 1 : 0), 0)
                 }
                 return {
                     ...space,
