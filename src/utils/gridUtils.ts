@@ -1,4 +1,4 @@
-import { Coord } from "../minesweeper/types";
+import { Coord, Space } from "../minesweeper/types";
 
 export const onGrid = <T,> (grid: T[][], coord: Coord): Boolean => {
     const { row, col } = coord;
@@ -50,4 +50,27 @@ export const getAdjacentTs = <T,> (coord: Coord, grid: T[][], predicate?: (item:
             }, [])
         ]
     }, []);
+}
+
+export const getSharedNeighbors = <T,> (coord1: Coord, coord2: Coord, grid: T[][], predicate?: (item: T) => boolean): T[] => {
+    return getAdjacentCoords(coord1, grid, (adjCoord: Coord) => {
+        return isNeighborC(coord2, adjCoord)
+            && (!predicate || predicate(grid[adjCoord.row][adjCoord.col]))
+    }).map(coord => grid[coord.row][coord.col])
+}
+
+export const isNeighborC = (coord1: Coord, coord2: Coord): boolean => {
+    const cdiff = coord2.col - coord1.col
+    const rdiff = coord2.row - coord1.row
+    return Math.abs(cdiff) <= 1 
+        && Math.abs(rdiff) <= 1 
+        && (cdiff !== 0 || rdiff !== 0)
+}
+
+export const isNeighborS = (s1: Space, s2: Space): boolean => {
+    const cdiff = s2.c - s1.c
+    const rdiff = s2.r - s1.r
+    return Math.abs(cdiff) <= 1 
+        && Math.abs(rdiff) <= 1 
+        && (cdiff !== 0 || rdiff !== 0)
 }

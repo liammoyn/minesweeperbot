@@ -9,10 +9,11 @@ const getGridFromString = (input: String): Space[][] => {
     }
     const grid = input.split('')
         .reduce((acc: Space[][], c: string, idx: number) => {
+                const flagged = c === 'F' || c === 'f'
                 const newSpace: Space = {
-                    isBomb: c === 'B' || c === 'b',
-                    isOpen: c >= 'A' && c <= 'Z',
-                    isFlagged: c === 'F' || c === 'f',
+                    isBomb: c === 'B' || c === 'b' || c === 'F',
+                    isOpen: c >= 'A' && c <= 'Z' && !flagged,
+                    isFlagged: flagged,
                     bombsNear: 0,
                     r: Math.floor(idx / sideLength),
                     c: idx % sideLength,

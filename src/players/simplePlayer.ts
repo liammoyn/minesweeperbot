@@ -1,5 +1,5 @@
 import { Board, Coord, Move, Player, Space } from "../minesweeper/types";
-import { getAdjacentCoords, getAdjacentTs } from "../utils/gridUtils";
+import { getAdjacentTs } from "../utils/gridUtils";
 
 
 /**
@@ -40,11 +40,11 @@ const simplePlayer = (): Player => {
                 const coord = { row: space.r, col: space.c }
                 const unopenedNeighbors = getAdjacentTs(coord, board.grid, s => !s.isOpen)
                 const bombNeighbors = unopenedNeighbors.filter(n => n.isFlagged)
-                if (space.bombsNear == unopenedNeighbors.length) {
+                if (space.bombsNear === unopenedNeighbors.length) {
                     // Flag a space that must be a bomb
                     const nextNeighbor = unopenedNeighbors.find(un => !un.isFlagged)
                     nextMove = nextNeighbor != null ? { coord: { row: nextNeighbor.r, col: nextNeighbor.c }, action: "FLAG" } : null
-                } else if (space.bombsNear == bombNeighbors.length) {
+                } else if (space.bombsNear === bombNeighbors.length) {
                     // Open a space that can't be a bomb
                     const nextNeighbor = unopenedNeighbors.find(un => !un.isFlagged)
                     nextMove = nextNeighbor != null ? { coord: { row: nextNeighbor.r, col: nextNeighbor.c }, action: "POP" } : null
@@ -62,7 +62,6 @@ const simplePlayer = (): Player => {
                 const nm = nextMove as Move
                 board.grid[nm.coord?.row!!][nm.coord?.col!!].highlightColor = "#000"
             }
-
 
 
             if (nextMove == null) {

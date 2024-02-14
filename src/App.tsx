@@ -1,15 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import './App.css';
 import consoleDisplayer from "./displayers/consoleDisplayer" 
 import naivePlayer from "./players/naivePlayer" 
 import reactDisplayer, { ReactDisplayerComp } from "./displayers/reactDisplayer"
 import minesweeper from './minesweeper/minesweeper';
 import { getNewBoard } from './minesweeper/boardGenerator';
-import { Button, Checkbox, InputLabel, MenuItem, Select, TextField } from '@mui/material';
+import { Button, Checkbox, MenuItem, Select, TextField } from '@mui/material';
 import { Board, Displayer, Player, Coord, Move } from './minesweeper/types';
 import userPlayer from './players/userPlayer';
 import simplePlayer from './players/simplePlayer';
 import { getBoardFromString } from './minesweeper/boardStringInterpretor';
+import contextAwarePlayer from './players/contextAwarePlayer';
 
 const App = () => {
   const [height, setHeight] = useState(5);
@@ -17,7 +18,7 @@ const App = () => {
   const [bombs, setBombs] = useState(5);
   const [displayerId, setDisplayerId] = useState("REACT");
   const [displayer, setDisplayer] = useState<Displayer>(consoleDisplayer);
-  const [playerId, setPlayerId] = useState("SIMPLE");
+  const [playerId, setPlayerId] = useState("CONTEXT");
   const [player, setPlayer] = useState<Player>(naivePlayer);
 
   const [useStepper, setUseStepper] = useState<boolean>(false);
@@ -52,6 +53,9 @@ const App = () => {
         break;
       case "SIMPLE":
         setPlayer(simplePlayer())
+        break;
+      case "CONTEXT":
+        setPlayer(contextAwarePlayer())
         break;
     }
   }, [playerId])
@@ -164,6 +168,7 @@ const App = () => {
           <MenuItem value={"USER"}>User</MenuItem>
           <MenuItem value={"NAIVE"}>Naive</MenuItem>
           <MenuItem value={"SIMPLE"}>Simple</MenuItem>
+          <MenuItem value={"CONTEXT"}>Context Aware</MenuItem>
         </Select>
         <div>
           <label>Use Stepper?</label>
@@ -177,7 +182,7 @@ const App = () => {
         </Button>
       </div>
       <div style={{ paddingTop: "20px", paddingBottom: "20px" }}>
-        {displayerId == "REACT" && (
+        {displayerId === "REACT" && (
           <div>
             <ReactDisplayerComp
               board={board}
