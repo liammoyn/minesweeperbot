@@ -4,22 +4,42 @@ import { Board, Displayer, Space, Coord } from "../minesweeper/types";
 interface ReactDisplayerCompProps {
     board: Board | null,
     onCellClick: (coord: Coord, isRightClick: boolean) => void,
+    showBomb: boolean,
 }
 
-export const ReactDisplayerComp = ({ board, onCellClick }: ReactDisplayerCompProps) => {
+export const ReactDisplayerComp = ({ board, onCellClick, showBomb }: ReactDisplayerCompProps) => {
 
-    const getSpaceColor = (space: Space): string => {
-        return space.isOpen 
-            ? space.isBomb
-                ? "red"
-                : "white" 
-            : space.isFlagged
-                ? "#990"
-                : "#AAA"
+    const getTextColor = (space: Space): string => {
+        const openBlankColor = (num: number): string => {
+            switch (num) {
+                case 1: return "#22F"
+                case 2: return "#2F2"
+                case 3: return "#F22"
+                case 4: return "#62F"
+                case 5: return "#922"
+                case 6: return "#299"
+                case 7: return "#BA5"
+                case 8: return "#555"
+            }
+            return "#FFF"
+        }
+        return space.isOpen
+            ? openBlankColor(space.bombsNear)
+            : "#FFF"
+    }
+
+    const getBackgroundColor = (space: Space, gameFinished: boolean): string => {
+        return space.isBomb
+            ? space.isOpen || gameFinished
+                ? "#F00"
+                : space.isFlagged ? "#FA0" : "#888"
+            : space.isOpen
+                ? "#DDD"
+                : space.isFlagged ? "#FA0" : "#888"
     }
 
     const getBorderColor = (space: Space): string => {
-        return space.highlightColor == null ? "red" : space.highlightColor
+        return space.highlightColor == null ? "#999" : space.highlightColor
     }
 
     const onSquareClick = (ridx: number, cidx: number, isRightClick: boolean) => {
@@ -53,7 +73,13 @@ export const ReactDisplayerComp = ({ board, onCellClick }: ReactDisplayerCompPro
                                 width: "30px",
                                 height: "30px",
                                 border: `1px solid ${getBorderColor(space)}`,
-                                backgroundColor: getSpaceColor(space) }}
+                                backgroundColor: getBackgroundColor(space, board.gameState === "WON" || board.gameState === "LOST"),
+                                color: getTextColor(space),
+                                fontWeight: "bold",
+                                textAlign: "center",
+                                verticalAlign: "middle",
+                                lineHeight: "30px",
+                            }}
                             onClick={() => onSquareClick(ridx, cidx, false)}
                             onContextMenu={e => {e.preventDefault(); onSquareClick(ridx, cidx, true);}}
                         >
@@ -65,7 +91,7 @@ export const ReactDisplayerComp = ({ board, onCellClick }: ReactDisplayerCompPro
                                 : space.isFlagged
                                     ? "F"
                                     : space.isBomb
-                                        ? "x"
+                                        ? showBomb ? "x" : ""
                                         : ""
                             }
                         </div>

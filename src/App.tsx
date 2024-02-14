@@ -131,19 +131,19 @@ const App = () => {
                 label="Height"
                 type="number"
                 value={height}
-                onChange={({ target }) => setHeight(target.value as unknown as number)}
+                onChange={({ target }) => setHeight(parseInt(target.value))}
               />
               <TextField
                 label="Width"
                 type="number"
                 value={width}
-                onChange={({ target }) => setWidth(target.value as unknown as number)}
+                onChange={({ target }) => setWidth(parseInt(target.value))}
               />
               <TextField
                 label="Bombs"
                 type="number"
                 value={bombs}
-                onChange={({ target }) => setBombs(target.value as unknown as number)}
+                onChange={({ target }) => setBombs(parseInt(target.value))}
               />
             </div>
           )}
@@ -182,6 +182,7 @@ const App = () => {
             <ReactDisplayerComp
               board={board}
               onCellClick={onCellClick}
+              showBomb={playerId !== "USER"}
             />
             {useStepper && (
               <div style={{ paddingTop: "10px" }}>

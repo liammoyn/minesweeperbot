@@ -58,6 +58,10 @@ const simplePlayer = (): Player => {
             potentialMoves.forEach(coord => board.grid[coord.row][coord.col].highlightColor = "#22F")
             movesOnEdge.forEach(coord => board.grid[coord.row][coord.col].highlightColor = "#0F0")
             numbersOnEdge.forEach(space => board.grid[space.r][space.c].highlightColor = "#FF0")
+            if (nextMove != null) {
+                const nm = nextMove as Move
+                board.grid[nm.coord?.row!!][nm.coord?.col!!].highlightColor = "#000"
+            }
 
 
 
