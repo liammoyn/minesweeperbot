@@ -181,24 +181,26 @@ const App = () => {
           Play Minesweeper
         </Button>
       </div>
-      <div style={{ paddingTop: "20px", paddingBottom: "20px" }}>
-        {displayerId === "REACT" && (
-          <div>
-            <ReactDisplayerComp
-              board={board}
-              onCellClick={onCellClick}
-              showBomb={playerId !== "USER"}
-            />
-            {useStepper && (
-              <div style={{ paddingTop: "10px" }}>
-                <Button onClick={stepForward} variant="outlined">
-                  Step
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      {board !== null && (
+        <div style={{ paddingTop: "20px", paddingBottom: "20px" }}>
+          {displayerId === "REACT" && (
+            <div>
+              <ReactDisplayerComp
+                board={board}
+                onCellClick={onCellClick}
+                showBomb={playerId !== "USER"}
+              />
+              {useStepper && (
+                <div style={{ paddingTop: "10px" }}>
+                  <Button onClick={stepForward} variant="outlined">
+                    Step
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
