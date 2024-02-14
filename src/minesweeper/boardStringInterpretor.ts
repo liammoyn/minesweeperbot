@@ -5,7 +5,7 @@ import { Board, GameState, Space } from "./types";
 const getGridFromString = (input: String): Space[][] => {
     const sideLength = Math.sqrt(input.length)
     if (sideLength % 1 !== 0) {
-        throw "Board string can only make square grids atm sorry"
+        throw Error("Board string can only make square grids atm sorry")
     }
     const grid = input.split('')
         .reduce((acc: Space[][], c: string, idx: number) => {
@@ -15,11 +15,11 @@ const getGridFromString = (input: String): Space[][] => {
                     isOpen: c >= 'A' && c <= 'Z' && !flagged,
                     isFlagged: flagged,
                     bombsNear: 0,
-                    r: Math.floor(idx / sideLength),
-                    c: idx % sideLength,
+                    row: Math.floor(idx / sideLength),
+                    col: idx % sideLength,
                     highlightColor: "none"
                 }
-                if (idx % sideLength == 0) {
+                if (idx % sideLength === 0) {
                     return [ ...acc, [ newSpace ] ]
                 } else {
                     const finished = acc.slice(0, -1)

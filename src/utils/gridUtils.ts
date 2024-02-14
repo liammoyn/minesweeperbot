@@ -17,7 +17,7 @@ export const getAdjacentCoords = <T,> (coord: Coord, grid: T[][], predicate?: (c
             ...acc,
             ...[-1, 0, 1].reduce((acc: Coord[], cInc) => {
                 const adjCoord = { col: cIdx + cInc, row: rIdx + rInc }
-                if (rInc == 0 && cInc == 0 || !onGrid(grid, adjCoord) || (predicate && !predicate(adjCoord))) {
+                if ((rInc === 0 && cInc === 0) || !onGrid(grid, adjCoord) || (predicate && !predicate(adjCoord))) {
                     return acc;
                 } else {
                     return [
@@ -39,7 +39,7 @@ export const getAdjacentTs = <T,> (coord: Coord, grid: T[][], predicate?: (item:
             ...[-1, 0, 1].reduce((acc: T[], cInc) => {
                 const adjCoord = { col: cIdx + cInc, row: rIdx + rInc }
                 const adjCell = onGrid(grid, adjCoord) ? grid[adjCoord.row][adjCoord.col] : null
-                if (rInc == 0 && cInc == 0 || adjCell == null || (predicate && !predicate(adjCell))) {
+                if ((rInc === 0 && cInc === 0) || adjCell === null || (predicate && !predicate(adjCell))) {
                     return acc;
                 } else {
                     return [
@@ -68,8 +68,8 @@ export const isNeighborC = (coord1: Coord, coord2: Coord): boolean => {
 }
 
 export const isNeighborS = (s1: Space, s2: Space): boolean => {
-    const cdiff = s2.c - s1.c
-    const rdiff = s2.r - s1.r
+    const cdiff = s2.col - s1.col
+    const rdiff = s2.row - s1.row
     return Math.abs(cdiff) <= 1 
         && Math.abs(rdiff) <= 1 
         && (cdiff !== 0 || rdiff !== 0)

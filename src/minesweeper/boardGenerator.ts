@@ -47,8 +47,8 @@ const generateGrid = (width: number, height: number, bombs: number): Space[][] =
         const col = idx % width;
         acc[row][col] = {
             ...cur,
-            r: row,
-            c: col,
+            row: row,
+            col: col,
         };
         return acc
     }, emptyGrid);
@@ -57,7 +57,7 @@ const generateGrid = (width: number, height: number, bombs: number): Space[][] =
 
 export const getNewBoard = (width: number, height: number, bombs: number): Board => {
     if (width < 3 || height < 3 || bombs < 1 || bombs >= width * height) {
-        throw 'Illegal arguments'
+        throw Error('Illegal arguments')
     }
     const grid = generateGrid(width, height, bombs);
     console.log(grid)

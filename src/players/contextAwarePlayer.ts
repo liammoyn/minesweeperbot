@@ -1,5 +1,6 @@
-import { Board, Coord, Move, Player, Space } from "../minesweeper/types";
+import { Board, Move, Player, Space } from "../minesweeper/types";
 import { getAdjacentTs, isNeighborS } from "../utils/gridUtils";
+import { spaceToCoord } from "../utils/spaceUtils";
 
 
 /**
@@ -7,96 +8,110 @@ import { getAdjacentTs, isNeighborS } from "../utils/gridUtils";
  * Highlights moves and numbers that are on the unknown edge.
  * Flags squares that must be bombs.
  * Pops squares that must not be bombs.
- * 
  * Uses context of other numbered squares to find bombs / frees.
+ * Tries to optimize computation.
  */
 const contextAwarePlayer = (): Player => {
+    let potentialMoves: Space[] = []
 
-    function tryToFindMove(space: Space, candidateNeighbors: Space[], knownBombNumber: number): Move | null {
+    function tryToFindMoveForSpace(space: Space, candidateNeighbors: Space[], knownBombNumber: number): Move | null {
         let nextMove: Move | null = null
         if (space.bombsNear === candidateNeighbors.length + knownBombNumber) {
             // All unopened spaces must be bombs, since this on edge there is at least one unflagged one
             const nextNeighbor = candidateNeighbors.find(un => !un.isFlagged)
-            nextMove = nextNeighbor != null ? { coord: { row: nextNeighbor.r, col: nextNeighbor.c }, action: "FLAG" } : null
+            nextMove = nextNeighbor != null ? { coord: { row: nextNeighbor.row, col: nextNeighbor.col }, action: "FLAG" } : null
         } else if (space.bombsNear === knownBombNumber) {
             // All unopened and unflagged spaces must be safe
             const nextNeighbor = candidateNeighbors.find(un => !un.isFlagged)
-            nextMove = nextNeighbor != null ? { coord: { row: nextNeighbor.r, col: nextNeighbor.c }, action: "POP" } : null
+            nextMove = nextNeighbor != null ? { coord: { row: nextNeighbor.row, col: nextNeighbor.col }, action: "POP" } : null
         }
         return nextMove
     }
 
+    function tryToFindMoveForEdge(board: Board, numbersOnEdge: Set<Space>): Move | null {
+        const reprocess: Map<Space, [ (s: Space) => boolean, number ]> = new Map()
+        let nextMove: Move | null = null
+
+        for (let space of numbersOnEdge) {
+            const coord = { row: space.row, col: space.col }
+            const nonEmptyNeighbors = getAdjacentTs(coord, board.grid, s => !(s.isOpen && s.bombsNear === 0))
+            const candidateNeighbors = nonEmptyNeighbors.filter(s => !s.isOpen && !s.isFlagged)
+            const flaggedNeighbors = nonEmptyNeighbors.filter(s => s.isFlagged)
+            nextMove = tryToFindMoveForSpace(space, candidateNeighbors, flaggedNeighbors.length)
+            if (nextMove != null) {
+                return nextMove;
+            }
+
+            // If all of our candidates are neighbors of a number:
+            // Then that number's candidates that aren't neighbors of us can be processed 
+            //  with (neighborNum - (space.bombsNear - flaggedNeighbors.length)) bombs near
+
+            const numberedCandidateNeighbors = nonEmptyNeighbors.filter(s => s.isOpen && numbersOnEdge.has(s))
+            for (let adjSpace of numberedCandidateNeighbors) {
+                if (candidateNeighbors.every(cn => isNeighborS(cn, adjSpace))) {
+                    reprocess.set(adjSpace, [(s: Space) => !isNeighborS(s, space), space.bombsNear - flaggedNeighbors.length])
+                }
+            }
+        }
+
+        if (nextMove == null) {
+            for (let entry of reprocess) {
+                let [ space, [ pred, extraKnownBombCount ]] = entry
+                const coord = { row: space.row, col: space.col }
+                const nonEmptyNeighbors = getAdjacentTs(coord, board.grid, s => !(s.isOpen && s.bombsNear === 0))
+                const candidateNeighbors = nonEmptyNeighbors.filter(s => !s.isOpen && !s.isFlagged && pred(s))
+                const flaggedNeighbors = nonEmptyNeighbors.filter(n => n.isFlagged)
+                nextMove = tryToFindMoveForSpace(space, candidateNeighbors, flaggedNeighbors.length + extraKnownBombCount)
+                if (nextMove != null) {
+                    return nextMove
+                }
+            }
+        }
+
+        return null
+    }
+
+    function findBestUncertainMove(possibleMoves: Space[]): Move {
+        // Guess a coordinate
+        const space = possibleMoves[0]
+        const coord = spaceToCoord(space)
+        return { coord: coord, action: "POP" }
+    }
+
     return {
         pickCell: (board: Board): Promise<Move> => {
-            let potentialMoves: Coord[] = []
-            let movesOnEdge: Set<Coord> = new Set()
+            let movesOnEdge: Set<Space> = new Set()
             let numbersOnEdge: Set<Space> = new Set()
 
-            potentialMoves = board.grid.flatMap(row => 
-                row.filter(space => !space.isOpen && !space.isFlagged)
-                    .map(space => ({
-                        row: space.r,
-                        col: space.c,
-                    })))
-
-            potentialMoves.forEach(coord => {
-                const neighbors = getAdjacentTs(coord, board.grid, s => s.isOpen)
+            if (potentialMoves.length === 0) {
+                potentialMoves = board.grid.flatMap(row => 
+                    row.filter(space => !space.isOpen && !space.isFlagged)
+                )
+            } else {
+                potentialMoves = potentialMoves.filter(space => !space.isOpen && !space.isFlagged)
+            }
+            
+            potentialMoves.forEach(space => {
+                const neighbors = getAdjacentTs(space, board.grid, s => s.isOpen)
                 if (neighbors.length > 0) {
-                    movesOnEdge.add(coord)
+                    movesOnEdge.add(space)
                     neighbors.forEach(n => {
                         numbersOnEdge.add(n)
                     })
                 }
             })
             
-            const reprocess: Map<Space, [ (s: Space) => boolean, number ]> = new Map()
-
-            let nextMove: Move | null = null
-            numbersOnEdge.forEach(space => {
-                const coord = { row: space.r, col: space.c }
-                const nonEmptyNeighbors = getAdjacentTs(coord, board.grid, s => !(s.isOpen && s.bombsNear === 0))
-                const candidateNeighbors = nonEmptyNeighbors.filter(s => !s.isOpen && !s.isFlagged)
-                const flaggedNeighbors = nonEmptyNeighbors.filter(s => s.isFlagged)
-                if (nextMove == null) {
-                    nextMove = tryToFindMove(space, candidateNeighbors, flaggedNeighbors.length)
-                }
-
-                // If all of our candidates are neighbors of a number:
-                // Then that number's candidates that aren't neighbors of us can be processed 
-                //  with (neighborNum - (space.bombsNear - flaggedNeighbors.length)) bombs near
-
-                const numberedCandidateNeighbors = nonEmptyNeighbors.filter(s => s.isOpen && numbersOnEdge.has(s))
-                for (let adjSpace of numberedCandidateNeighbors) {
-                    if (candidateNeighbors.every(cn => isNeighborS(cn, adjSpace))) {
-                        reprocess.set(adjSpace, [(s: Space) => !isNeighborS(s, space), space.bombsNear - flaggedNeighbors.length])
-                    }
-                }
-            })
-
-            if (nextMove == null) {
-                for (let entry of reprocess) {
-                    let [ space, [ pred, extraKnownBombCount ]] = entry
-                    const coord = { row: space.r, col: space.c }
-                    const nonEmptyNeighbors = getAdjacentTs(coord, board.grid, s => !(s.isOpen && s.bombsNear === 0))
-                    const candidateNeighbors = nonEmptyNeighbors.filter(s => !s.isOpen && !s.isFlagged && pred(s))
-                    const flaggedNeighbors = nonEmptyNeighbors.filter(n => n.isFlagged)
-                    if (nextMove == null) {
-                        nextMove = tryToFindMove(space, candidateNeighbors, flaggedNeighbors.length + extraKnownBombCount)
-                    }
-                }
-            }
+            let nextMove = tryToFindMoveForEdge(board, numbersOnEdge)
 
             console.log(nextMove)
             if (nextMove == null) {
-                // Guess a coordinate
-                const coord = potentialMoves[0]
-                nextMove = { coord: coord, action: "POP" }
+                nextMove = findBestUncertainMove(potentialMoves)
             }
 
             board.grid.forEach(row => row.forEach(space => space.highlightColor = "#F22"))
-            potentialMoves.forEach(coord => board.grid[coord.row][coord.col].highlightColor = "#22F")
-            movesOnEdge.forEach(coord => board.grid[coord.row][coord.col].highlightColor = "#0F0")
-            numbersOnEdge.forEach(space => board.grid[space.r][space.c].highlightColor = "#FF0")
+            potentialMoves.forEach(space => board.grid[space.row][space.col].highlightColor = "#22F")
+            movesOnEdge.forEach(space => board.grid[space.row][space.col].highlightColor = "#0F0")
+            numbersOnEdge.forEach(space => board.grid[space.row][space.col].highlightColor = "#FF0")
             board.grid[nextMove.coord?.row!!][nextMove.coord?.col!!].highlightColor = "#000"
 
             return new Promise(res => {

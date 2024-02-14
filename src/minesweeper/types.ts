@@ -22,8 +22,8 @@ export interface Space {
     isBomb: boolean,
     bombsNear: number,
     isFlagged: boolean,
-    r: number,
-    c: number
+    row: number,
+    col: number
     highlightColor: string | null,
 }
 

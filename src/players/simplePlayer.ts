@@ -20,8 +20,8 @@ const simplePlayer = (): Player => {
             potentialMoves = board.grid.flatMap(row => 
                 row.filter(space => !space.isOpen && !space.isFlagged)
                     .map(space => ({
-                        row: space.r,
-                        col: space.c,
+                        row: space.row,
+                        col: space.col,
                     })))
 
             potentialMoves.forEach(coord => {
@@ -37,17 +37,17 @@ const simplePlayer = (): Player => {
 
             let nextMove: Move | null = null
             numbersOnEdge.forEach(space => {
-                const coord = { row: space.r, col: space.c }
+                const coord = { row: space.row, col: space.col }
                 const unopenedNeighbors = getAdjacentTs(coord, board.grid, s => !s.isOpen)
                 const bombNeighbors = unopenedNeighbors.filter(n => n.isFlagged)
                 if (space.bombsNear === unopenedNeighbors.length) {
                     // Flag a space that must be a bomb
                     const nextNeighbor = unopenedNeighbors.find(un => !un.isFlagged)
-                    nextMove = nextNeighbor != null ? { coord: { row: nextNeighbor.r, col: nextNeighbor.c }, action: "FLAG" } : null
+                    nextMove = nextNeighbor != null ? { coord: { row: nextNeighbor.row, col: nextNeighbor.col }, action: "FLAG" } : null
                 } else if (space.bombsNear === bombNeighbors.length) {
                     // Open a space that can't be a bomb
                     const nextNeighbor = unopenedNeighbors.find(un => !un.isFlagged)
-                    nextMove = nextNeighbor != null ? { coord: { row: nextNeighbor.r, col: nextNeighbor.c }, action: "POP" } : null
+                    nextMove = nextNeighbor != null ? { coord: { row: nextNeighbor.row, col: nextNeighbor.col }, action: "POP" } : null
                 }
             })
 
@@ -62,7 +62,7 @@ const simplePlayer = (): Player => {
             board.grid.forEach(row => row.forEach(space => space.highlightColor = "#F22"))
             potentialMoves.forEach(coord => board.grid[coord.row][coord.col].highlightColor = "#22F")
             movesOnEdge.forEach(coord => board.grid[coord.row][coord.col].highlightColor = "#0F0")
-            numbersOnEdge.forEach(space => board.grid[space.r][space.c].highlightColor = "#FF0")
+            numbersOnEdge.forEach(space => board.grid[space.row][space.col].highlightColor = "#FF0")
             board.grid[nextMove.coord?.row!!][nextMove.coord?.col!!].highlightColor = "#000"
 
             return new Promise(res => {
