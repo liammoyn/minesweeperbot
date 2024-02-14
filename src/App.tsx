@@ -4,10 +4,12 @@ import consoleDisplayer from "./displayers/consoleDisplayer"
 import naivePlayer from "./players/naivePlayer" 
 import reactDisplayer, { ReactDisplayerComp } from "./displayers/reactDisplayer"
 import minesweeper from './minesweeper/minesweeper';
+import { getNewBoard } from './minesweeper/boardGenerator';
 import { Button, Checkbox, InputLabel, MenuItem, Select, TextField } from '@mui/material';
 import { Board, Displayer, Player, Coord, Move } from './minesweeper/types';
 import userPlayer from './players/userPlayer';
 import simplePlayer from './players/simplePlayer';
+import { getBoardFromString } from './minesweeper/boardStringInterpretor';
 
 const App = () => {
   const [height, setHeight] = useState(5);
@@ -20,6 +22,9 @@ const App = () => {
 
   const [useStepper, setUseStepper] = useState<boolean>(false);
   const [currentStepResolve, setCurrentStepResolve] = useState<() => void>();
+
+  const [useCustomBoard, setUseCustomBoard] = useState<boolean>(false);
+  const [customBoardString, setCustomBoardString] = useState<string>("");
 
   const [currentMoveResolve, setCurrentMoveResolve] = useState<(m: Move) => void>();
 
@@ -52,8 +57,14 @@ const App = () => {
   }, [playerId])
 
   const runMinesweeper = () => {
-    console.log(`Running with ${width} ${height} ${bombs}`)
-    minesweeper(width, height, bombs, displayer, player);
+    let board: Board
+    if (useCustomBoard) {
+      board = getBoardFromString(customBoardString)
+    } else {
+      console.log(`Running with ${width} ${height} ${bombs}`)
+      board = getNewBoard(width, height, bombs)
+    }
+    minesweeper(board, displayer, player);
   }
 
   const getDisplayDelay = (playerId: string): number => {
@@ -97,24 +108,46 @@ const App = () => {
   return (
     <div className="App" style={{ paddingTop: "50px" }}>
       <div>
-        <TextField
-          label="Height"
-          type="number"
-          value={height}
-          onChange={({ target }) => setHeight(target.value as unknown as number)}
-        />
-        <TextField
-          label="Width"
-          type="number"
-          value={width}
-          onChange={({ target }) => setWidth(target.value as unknown as number)}
-        />
-        <TextField
-          label="Bombs"
-          type="number"
-          value={bombs}
-          onChange={({ target }) => setBombs(target.value as unknown as number)}
-        />
+        <div style={{ paddingBottom: "5px" }}>
+          <div>
+            <label>Use Custom Board?</label>
+            <Checkbox
+              checked={useCustomBoard}
+              onChange={({ target }) => setUseCustomBoard(target.checked)}
+            />
+          </div>
+          {useCustomBoard ? (
+            <div>
+              <TextField
+                label="Board String"
+                type="string"
+                value={customBoardString}
+                onChange={({ target }) => setCustomBoardString(target.value as unknown as string)}
+              />
+            </div>
+          ) : (
+            <div>
+              <TextField
+                label="Height"
+                type="number"
+                value={height}
+                onChange={({ target }) => setHeight(target.value as unknown as number)}
+              />
+              <TextField
+                label="Width"
+                type="number"
+                value={width}
+                onChange={({ target }) => setWidth(target.value as unknown as number)}
+              />
+              <TextField
+                label="Bombs"
+                type="number"
+                value={bombs}
+                onChange={({ target }) => setBombs(target.value as unknown as number)}
+              />
+            </div>
+          )}
+        </div>
         <Select
           label="Displayer"
           value={displayerId}
@@ -143,7 +176,7 @@ const App = () => {
           Play Minesweeper
         </Button>
       </div>
-      <div style={{ paddingTop: "50px"}}>
+      <div style={{ paddingTop: "20px", paddingBottom: "20px" }}>
         {displayerId == "REACT" && (
           <div>
             <ReactDisplayerComp

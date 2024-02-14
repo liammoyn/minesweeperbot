@@ -27,7 +27,9 @@ export interface Space {
     highlightColor: string | null,
 }
 
+export type GameState = "IN_PROGRESS" | "NEW" | "WON" | "LOST"
+
 export interface Board {
     grid: Space[][],
-    gameState: "IN_PROGRESS" | "NEW" | "WON" | "LOST"
+    gameState: GameState,
 }
