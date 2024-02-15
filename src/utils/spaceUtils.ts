@@ -4,3 +4,7 @@ export const spaceToCoord = (space: Space): Coord => ({
     col: space.col,
     row: space.row
 })
+
+export const isSame = (c1: Coord, c2: Coord): boolean => {
+    return c1.col === c2.col && c1.row === c2.row
+}

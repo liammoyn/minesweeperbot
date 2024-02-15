@@ -74,3 +74,12 @@ export const isNeighborS = (s1: Space, s2: Space): boolean => {
         && Math.abs(rdiff) <= 1 
         && (cdiff !== 0 || rdiff !== 0)
 }
+
+export const getCrossSection = (spaces: Space[], grid: Space[][], pred?: (s: Space) => boolean): Space[] => {
+    if (spaces.length == 0) { return [] }
+    let candidates = getAdjacentTs(spaces[0], grid, pred)
+    for (let i = 1; i < spaces.length; i++) {
+        candidates = candidates.filter(s => isNeighborS(s, spaces[i]))
+    }
+    return candidates
+}

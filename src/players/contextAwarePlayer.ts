@@ -1,6 +1,6 @@
 import { Board, Move, Player, Space } from "../minesweeper/types";
-import { getAdjacentTs, isNeighborS } from "../utils/gridUtils";
-import { spaceToCoord } from "../utils/spaceUtils";
+import { getAdjacentTs, getCrossSection, isNeighborS } from "../utils/gridUtils";
+import { isSame, spaceToCoord } from "../utils/spaceUtils";
 
 
 /**
@@ -29,7 +29,7 @@ const contextAwarePlayer = (): Player => {
     }
 
     function tryToFindMoveForEdge(board: Board, numbersOnEdge: Set<Space>): Move | null {
-        const reprocess: Map<Space, [ (s: Space) => boolean, number ]> = new Map()
+        const reprocess: Map<Space, [ Set<Space>, number ]> = new Map()
         let nextMove: Move | null = null
 
         for (let space of numbersOnEdge) {
@@ -39,41 +39,76 @@ const contextAwarePlayer = (): Player => {
             const flaggedNeighbors = nonEmptyNeighbors.filter(s => s.isFlagged)
             nextMove = tryToFindMoveForSpace(space, candidateNeighbors, flaggedNeighbors.length)
             if (nextMove != null) {
+                console.log("Found normally through:", space)
                 return nextMove;
             }
 
-            // If all of our candidates are neighbors of a number:
-            // Then that number's candidates that aren't neighbors of us can be processed 
-            //  with (neighborNum - (space.bombsNear - flaggedNeighbors.length)) bombs near
 
-            const numberedCandidateNeighbors = nonEmptyNeighbors.filter(s => s.isOpen && numbersOnEdge.has(s))
-            for (let adjSpace of numberedCandidateNeighbors) {
-                if (candidateNeighbors.every(cn => isNeighborS(cn, adjSpace))) {
-                    let thisIsntNeighborPred = (s: Space) => !isNeighborS(s, space)
-                    let thisExtraBombs = space.bombsNear - flaggedNeighbors.length
+            // Get cross section of all candidateNeighbors to find all spaces that are adjacent to all of them
+            // Check if any of these spaces in the cross section are in the numbersOnEdge set
+            // If they are, add them to reprocessing queue
 
-                    let existingEntry = reprocess.get(adjSpace)
-                    if (existingEntry !== undefined) {
-                        let [oldPred, oldExtraBombs] = existingEntry
-                        let newPred = (s: Space) => thisIsntNeighborPred(s) && oldPred(s)
-                        let newExtraBombs = thisExtraBombs + oldExtraBombs
-                        reprocess.set(adjSpace, [newPred, newExtraBombs])
-                    } else {
-                        reprocess.set(adjSpace, [thisIsntNeighborPred, thisExtraBombs])
-                    }
-                }
+            const spacesToReprocess = getCrossSection(
+                candidateNeighbors,
+                board.grid,
+                (s: Space) => !(s.row === space.row && s.col === space.col) && numbersOnEdge.has(s)
+            )
+            if (space.row === 0 && space.col === 0) {
+                console.log(spacesToReprocess)
             }
+            spacesToReprocess.forEach(reprocessSpace => {
+                const theseEligibleSpaces = new Set(getAdjacentTs(
+                    reprocessSpace,
+                    board.grid,
+                    (s: Space) => !s.isOpen && !s.isFlagged && !isSame(s, space) && !isNeighborS(s, space)
+                ))
+                let thisExtraBombs = space.bombsNear - flaggedNeighbors.length
+
+                if (theseEligibleSpaces.size > 0) {
+                    // let existingEntry = reprocess.get(reprocessSpace)
+                    // if (existingEntry !== undefined) {
+                    //     let [ oldSpaces, oldExtraBombs ] = existingEntry
+                    //     const combinedSpaces = intersection(oldSpaces, theseEligibleSpaces)
+                    //     if (combinedSpaces.length > 0) {
+                    //         reprocess.set(reprocessSpace, [combinedSpaces, thisExtraBombs + oldExtraBombs])
+                    //     }
+                    // }
+
+
+
+                    reprocess.set(reprocessSpace, [theseEligibleSpaces, thisExtraBombs])
+                }
+
+                // let existingEntry = reprocess.get(reprocessSpace)
+                // if (existingEntry !== undefined) {
+                //     let [oldPred, oldExtraBombs] = existingEntry
+                //     let newPred = (s: Space) => thisIsntNeighborPred(s) && oldPred(s)
+                //     let newExtraBombs = thisExtraBombs + oldExtraBombs
+                //     reprocess.set(reprocessSpace, [newPred, newExtraBombs])
+                // } else {
+                //     reprocess.set(reprocessSpace, [theseEligibleSpaces, thisExtraBombs])
+                // }
+            })
         }
+
+
+        // Then that number's candidates that aren't neighbors of us can be processed 
+        //  with (neighborNum - (space.bombsNear - flaggedNeighbors.length)) bombs near
 
         if (nextMove == null) {
             for (let entry of reprocess) {
-                let [ space, [ pred, extraKnownBombCount ]] = entry
+                let [ space, [ eligibleSpaces, extraKnownBombCount ]] = entry
+                if (space.row === 2 && space.col === 1) {
+                    console.log(extraKnownBombCount)
+                    console.log("Eligible spaces", eligibleSpaces)
+                }
                 const coord = { row: space.row, col: space.col }
                 const nonEmptyNeighbors = getAdjacentTs(coord, board.grid, s => !(s.isOpen && s.bombsNear === 0))
-                const candidateNeighbors = nonEmptyNeighbors.filter(s => !s.isOpen && !s.isFlagged && pred(s))
+                const candidateNeighbors = nonEmptyNeighbors.filter(s => !s.isOpen && !s.isFlagged && eligibleSpaces.has(s))
                 const flaggedNeighbors = nonEmptyNeighbors.filter(n => n.isFlagged)
                 nextMove = tryToFindMoveForSpace(space, candidateNeighbors, flaggedNeighbors.length + extraKnownBombCount)
                 if (nextMove != null) {
+                    console.log("Found through analysis", space)
                     return nextMove
                 }
             }
@@ -113,7 +148,7 @@ const contextAwarePlayer = (): Player => {
             
             let nextMove = tryToFindMoveForEdge(board, numbersOnEdge)
 
-            console.log(nextMove)
+            console.log(nextMove !== null ? nextMove : "GUESSING ", findBestUncertainMove(potentialMoves))
             if (nextMove == null) {
                 nextMove = findBestUncertainMove(potentialMoves)
             }
