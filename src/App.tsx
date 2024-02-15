@@ -9,7 +9,7 @@ import { Button, Checkbox, MenuItem, Select, TextField } from '@mui/material';
 import { Board, Displayer, Player, Coord, Move } from './minesweeper/types';
 import userPlayer from './players/userPlayer';
 import simplePlayer from './players/simplePlayer';
-import { getBoardFromString } from './minesweeper/boardStringInterpretor';
+import { getBoardFromString, getStringFromBoard } from './minesweeper/boardStringInterpretor';
 import contextAwarePlayer from './players/contextAwarePlayer';
 
 const App = () => {
@@ -27,9 +27,18 @@ const App = () => {
   const [useCustomBoard, setUseCustomBoard] = useState<boolean>(false);
   const [customBoardString, setCustomBoardString] = useState<string>("");
 
+  const [showBoardString, setShowBoardString] = useState<boolean>(false);
+  const [currentBoardString, setCurrentBoardString] = useState<string>("");
+
   const [currentMoveResolve, setCurrentMoveResolve] = useState<(m: Move) => void>();
 
   const [board, setBoard] = useState<Board | null>(null);
+
+  useEffect(() => {
+    if (showBoardString) {
+      setCurrentBoardString(board == null ? "" : getStringFromBoard(board.grid!!))
+    }
+  }, [showBoardString, board])
 
   useEffect(() => {
     const displayDelay = getDisplayDelay(playerId)
@@ -175,6 +184,13 @@ const App = () => {
             onChange={({ target }) => setUseStepper(target.checked)}
           />
         </div>
+        <div>
+          <label>Show Board String?</label>
+          <Checkbox
+            checked={showBoardString}
+            onChange={({ target }) => setShowBoardString(target.checked)}
+          />
+        </div>
         <Button onClick={runMinesweeper} variant="outlined">
           Play Minesweeper
         </Button>
@@ -194,6 +210,9 @@ const App = () => {
                     Step
                   </Button>
                 </div>
+              )}
+              {showBoardString && (
+                <div>{currentBoardString}</div>
               )}
             </div>
           )}

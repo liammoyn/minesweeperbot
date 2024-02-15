@@ -52,3 +52,21 @@ export const getBoardFromString = (input: string): Board => {
         gameState,
     }
 }
+
+export const getStringFromBoard = (grid: Space[][]): string => {
+    let ans = ""
+    for (let row of grid) {
+        for (let s of row) {
+            let nextCar: string
+            if (s.isFlagged) {
+                nextCar = s.isBomb ? 'F' : 'f'
+            } else if (s.isBomb) {
+                nextCar = s.isOpen ? 'B' : 'b' 
+            } else {
+                nextCar = s.isOpen ? 'O' : 'o'
+            }
+            ans += nextCar
+        }
+    }
+    return ans
+}
