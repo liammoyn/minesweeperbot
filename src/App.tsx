@@ -77,10 +77,8 @@ const App = () => {
         return 1000;
       case "USER":
         return 0;
-      case "SIMPLE":
-        return 1000;
     }
-    return 1000;
+    return 500;
   }
 
   const onUserMove = (): Promise<Move> => {

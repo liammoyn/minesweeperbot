@@ -12,6 +12,7 @@ import { getAdjacentTs } from "../utils/gridUtils";
 const simplePlayer = (): Player => {
 
     return {
+        newGame: () => Promise.resolve(),
         pickCell: (board: Board): Promise<Move> => {
             let potentialMoves: Coord[] = []
             let movesOnEdge: Set<Coord> = new Set()

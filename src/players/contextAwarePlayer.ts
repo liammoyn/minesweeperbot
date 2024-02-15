@@ -49,7 +49,18 @@ const contextAwarePlayer = (): Player => {
             const numberedCandidateNeighbors = nonEmptyNeighbors.filter(s => s.isOpen && numbersOnEdge.has(s))
             for (let adjSpace of numberedCandidateNeighbors) {
                 if (candidateNeighbors.every(cn => isNeighborS(cn, adjSpace))) {
-                    reprocess.set(adjSpace, [(s: Space) => !isNeighborS(s, space), space.bombsNear - flaggedNeighbors.length])
+                    let thisIsntNeighborPred = (s: Space) => !isNeighborS(s, space)
+                    let thisExtraBombs = space.bombsNear - flaggedNeighbors.length
+
+                    let existingEntry = reprocess.get(adjSpace)
+                    if (existingEntry !== undefined) {
+                        let [oldPred, oldExtraBombs] = existingEntry
+                        let newPred = (s: Space) => thisIsntNeighborPred(s) && oldPred(s)
+                        let newExtraBombs = thisExtraBombs + oldExtraBombs
+                        reprocess.set(adjSpace, [newPred, newExtraBombs])
+                    } else {
+                        reprocess.set(adjSpace, [thisIsntNeighborPred, thisExtraBombs])
+                    }
                 }
             }
         }
@@ -79,17 +90,16 @@ const contextAwarePlayer = (): Player => {
     }
 
     return {
+        newGame: (board: Board): Promise<void> => {
+            potentialMoves = board.grid.flatMap(row => 
+                row.filter(space => !space.isOpen && !space.isFlagged)
+            )
+            return Promise.resolve()
+        },
         pickCell: (board: Board): Promise<Move> => {
+            potentialMoves = potentialMoves.filter(space => !space.isOpen && !space.isFlagged)
             let movesOnEdge: Set<Space> = new Set()
             let numbersOnEdge: Set<Space> = new Set()
-
-            if (potentialMoves.length === 0) {
-                potentialMoves = board.grid.flatMap(row => 
-                    row.filter(space => !space.isOpen && !space.isFlagged)
-                )
-            } else {
-                potentialMoves = potentialMoves.filter(space => !space.isOpen && !space.isFlagged)
-            }
             
             potentialMoves.forEach(space => {
                 const neighbors = getAdjacentTs(space, board.grid, s => s.isOpen)
@@ -115,7 +125,7 @@ const contextAwarePlayer = (): Player => {
             board.grid[nextMove.coord?.row!!][nextMove.coord?.col!!].highlightColor = "#000"
 
             return new Promise(res => {
-                setTimeout(() => res(nextMove!!), 1000)
+                setTimeout(() => res(nextMove!!), 500)
             })
         }
     }

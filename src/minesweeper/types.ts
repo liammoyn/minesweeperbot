@@ -5,6 +5,7 @@ export interface Displayer {
 
 export interface Player {
     pickCell: (board: Board) => Promise<Move>
+    newGame: (board: Board) => Promise<void>
 };
 
 export interface Coord {

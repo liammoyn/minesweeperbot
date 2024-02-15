@@ -1,14 +1,15 @@
 import { getAdjacentCoords, onGrid } from "../utils/gridUtils";
-import { Board, Player, Move, Space, Coord, Displayer, GameState } from "./types";
+import { Board, Player, Move, Coord, Displayer, GameState } from "./types";
 
 const minesweeper = async (initialBoard: Board, displayer: Displayer, player: Player): Promise<GameState> => {
     let board = initialBoard;
+    player.newGame(board)
     
     while (["IN_PROGRESS", "NEW" ].includes(board.gameState)) {
         const newBoard = await runMove(displayer, board, player);
         
-        if (newBoard == null || newBoard.gameState == "LOST") {
-            if (newBoard != null) { 
+        if (newBoard === null || newBoard.gameState === "LOST") {
+            if (newBoard !== null) { 
                 displayBoard(displayer, newBoard)
             } else {
                 console.log("null board")
@@ -54,7 +55,7 @@ const applyMove = (board: Board, move: Move): Board | null => {
         return board;
     }
 
-    if (move.action == "FLAG") {
+    if (move.action === "FLAG") {
         const newGrid = board.grid;
         newGrid[row][col].isFlagged = !nextSpace.isFlagged;
         return {
@@ -82,7 +83,7 @@ const applyMove = (board: Board, move: Move): Board | null => {
         if (!onGrid(newGrid, next) || newGrid[next.row][next.col].isOpen) { continue; }
         newGrid[next.row][next.col].isOpen = true;
         let newCoords: Coord[] = []
-        if (newGrid[next.row][next.col]?.bombsNear == 0) {
+        if (newGrid[next.row][next.col]?.bombsNear === 0) {
             const adjacentCoords = getAdjacentCoords(next, newGrid);
             newCoords = adjacentCoords.filter(coord => !newGrid[coord.row][coord.col].isOpen)
         }
