@@ -1,11 +1,28 @@
 import { populateBombCounts } from "./boardGenerator";
 import { Board, GameState, Space } from "./types";
 
+const factor = (num: number): number[] => {
+    const ans = []
+    for (let low = 1; low < Math.sqrt(num); low++) {
+        if (num % low === 0) {
+            let hi = num / low
+            ans.push(low)
+            ans.push(hi)
+        }
+    }
+    if (Math.floor(Math.sqrt(num)) * Math.sqrt(num) == num) {
+        ans.push(Math.sqrt(num))
+    }
+    return ans.sort((a, b) => a - b)
+}
 
 const getGridFromString = (input: String): Space[][] => {
-    const sideLength = Math.sqrt(input.length)
-    if (sideLength % 1 !== 0) {
-        throw Error("Board string can only make square grids atm sorry")
+    const factors: number[] = factor(input.length)
+    let width: number
+    if (factors.length % 2 === 0) {
+        width = factors[factors.length / 2]
+    } else {
+        width = factors[Math.floor(factors.length / 2)]
     }
     const grid = input.split('')
         .reduce((acc: Space[][], c: string, idx: number) => {
@@ -15,11 +32,11 @@ const getGridFromString = (input: String): Space[][] => {
                     isOpen: c >= 'A' && c <= 'Z' && !flagged,
                     isFlagged: flagged,
                     bombsNear: 0,
-                    row: Math.floor(idx / sideLength),
-                    col: idx % sideLength,
-                    highlightColor: "none"
+                    row: Math.floor(idx / width),
+                    col: idx % width,
+                    highlightColor: null
                 }
-                if (idx % sideLength === 0) {
+                if (idx % width === 0) {
                     return [ ...acc, [ newSpace ] ]
                 } else {
                     const finished = acc.slice(0, -1)
