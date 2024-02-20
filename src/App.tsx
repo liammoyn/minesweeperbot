@@ -21,7 +21,7 @@ const App = () => {
   const [displayerId, setDisplayerId] = useState("REACT");
   const [displayer, setDisplayer] = useState<Displayer>(consoleDisplayer);
   const [playerId, setPlayerId] = useState("CONTEXT");
-  const [player, setPlayer] = useState<Player>(contextAwarePlayer());
+  const [player, setPlayer] = useState<Player>(contextAwarePlayer(true, 1000));
 
   const [useStepper, setUseStepper] = useState<boolean>(false);
   const [currentStepResolve, setCurrentStepResolve] = useState<() => void>();
@@ -85,7 +85,7 @@ const App = () => {
       const games: Promise<GameState>[] = new Array(batchSize)
       for (let i = 0; i < batchSize; i++) {
         const board: Board = getNewBoard(width, height, bombs)
-        games[i] = minesweeper(board, noneDisplayer, getPlayerForId(playerId))
+        games[i] = minesweeper(board, noneDisplayer, getPlayerForId(playerId, false, 0))
       }
       let winCount = Promise.all(games)
         .then((gameStatuses) => {
@@ -102,16 +102,16 @@ const App = () => {
     await getBatchPromise()
   }
 
-  const getPlayerForId = (playerId: string): Player => {
+  const getPlayerForId = (playerId: string, showHighlights: boolean = true, delayMs: number = 100): Player => {
     switch (playerId) {
       case "NAIVE":
         return naivePlayer
       case "USER":
         return userPlayer(onUserMove)()
       case "SIMPLE":
-        return simplePlayer()
+        return simplePlayer(showHighlights, delayMs)
       case "CONTEXT":
-        return contextAwarePlayer()
+        return contextAwarePlayer(showHighlights, delayMs)
     }
     return naivePlayer;
   }

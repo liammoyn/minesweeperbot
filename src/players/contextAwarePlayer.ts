@@ -11,7 +11,7 @@ import { isSame, spaceToCoord } from "../utils/spaceUtils";
  * Uses context of other numbered squares to find bombs / frees.
  * Tries to optimize computation.
  */
-const contextAwarePlayer = (): Player => {
+const contextAwarePlayer = (setHighlights: boolean, delayMs: number): Player => {
     let potentialMoves: Space[] = []
 
     function tryToFindMoveForSpace(space: Space, candidateNeighbors: Space[], knownBombNumber: number): Move | null {
@@ -110,16 +110,21 @@ const contextAwarePlayer = (): Player => {
                 nextMove = findBestUncertainMove(potentialMoves)
             }
 
-            // board.grid.forEach(row => row.forEach(space => space.highlightColor = "#F22"))
-            // potentialMoves.forEach(space => board.grid[space.row][space.col].highlightColor = "#22F")
-            // movesOnEdge.forEach(space => board.grid[space.row][space.col].highlightColor = "#0F0")
-            // numbersOnEdge.forEach(space => board.grid[space.row][space.col].highlightColor = "#FF0")
-            // board.grid[nextMove.coord?.row!!][nextMove.coord?.col!!].highlightColor = "#000"
+            if (setHighlights) {
+                board.grid.forEach(row => row.forEach(space => space.highlightColor = "#F22"))
+                potentialMoves.forEach(space => board.grid[space.row][space.col].highlightColor = "#22F")
+                movesOnEdge.forEach(space => board.grid[space.row][space.col].highlightColor = "#0F0")
+                numbersOnEdge.forEach(space => board.grid[space.row][space.col].highlightColor = "#FF0")
+                board.grid[nextMove.coord?.row!!][nextMove.coord?.col!!].highlightColor = "#000"
+            }
 
-            return Promise.resolve(nextMove!!)
-            // return new Promise(res => {
-            //     setTimeout(() => res(nextMove!!), 500)
-            // })
+            if (delayMs > 0) {
+                return new Promise(res => {
+                    setTimeout(() => res(nextMove!!), delayMs)
+                })
+            } else {
+                return Promise.resolve(nextMove!!)
+            }
         }
     }
 }

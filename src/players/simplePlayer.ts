@@ -9,7 +9,7 @@ import { getAdjacentTs } from "../utils/gridUtils";
  * Pops squares that must not be bombs.
  * Picks a tile from the edge at random otherwise.
  */
-const simplePlayer = (): Player => {
+const simplePlayer = (setHighlights: boolean, delayMs: number): Player => {
 
     return {
         newGame: () => Promise.resolve(),
@@ -56,20 +56,25 @@ const simplePlayer = (): Player => {
             // console.log(nextMove)
             if (nextMove == null) {
                 // Guess a coordinate
-                const coord = potentialMoves[Math.floor(potentialMoves.length / 2)]
+                const coord = potentialMoves[0]
                 nextMove = { coord: coord, action: "POP" }
             }
 
-            // board.grid.forEach(row => row.forEach(space => space.highlightColor = "#F22"))
-            // potentialMoves.forEach(coord => board.grid[coord.row][coord.col].highlightColor = "#22F")
-            // movesOnEdge.forEach(coord => board.grid[coord.row][coord.col].highlightColor = "#0F0")
-            // numbersOnEdge.forEach(space => board.grid[space.row][space.col].highlightColor = "#FF0")
-            // board.grid[nextMove.coord?.row!!][nextMove.coord?.col!!].highlightColor = "#000"
+            if (setHighlights) {
+                board.grid.forEach(row => row.forEach(space => space.highlightColor = "#F22"))
+                potentialMoves.forEach(space => board.grid[space.row][space.col].highlightColor = "#22F")
+                movesOnEdge.forEach(space => board.grid[space.row][space.col].highlightColor = "#0F0")
+                numbersOnEdge.forEach(space => board.grid[space.row][space.col].highlightColor = "#FF0")
+                board.grid[nextMove.coord?.row!!][nextMove.coord?.col!!].highlightColor = "#000"
+            }
 
-            return Promise.resolve(nextMove)
-            // return new Promise(res => {
-            //     setTimeout(() => res(nextMove!!), 1000)
-            // })
+            if (delayMs > 0) {
+                return new Promise(res => {
+                    setTimeout(() => res(nextMove!!), delayMs)
+                })
+            } else {
+                return Promise.resolve(nextMove!!)
+            }
         }
     }
 }
