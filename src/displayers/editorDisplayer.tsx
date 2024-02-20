@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Board, Displayer, Space, Coord } from "../minesweeper/types";
 import { ReactDisplayerComp } from './reactDisplayer';
 import { Button } from '@mui/material';
@@ -12,7 +12,7 @@ interface EditorDisplayerCompProps {
     onBoardChange: (newBoard: Board) => void,
 }
 
-const SELECTED_COLOR = "#F00"
+const SELECTED_COLOR = "/#FA0"
 
 export const EditorDisplayerComp = ({ board, onCellClick, onBoardChange }: EditorDisplayerCompProps) => {
     const [selectedCoord, setSelectedCoord] = useState<Coord | null>(null);

@@ -29,6 +29,9 @@ export const ReactDisplayerComp = ({ board, onCellClick, showBomb }: ReactDispla
     }
 
     const getBackgroundColor = (space: Space, gameFinished: boolean): string => {
+        if ((space.highlightColor?.split("/")?.length || 0) > 1) {
+            return space.highlightColor?.split("/")[1]!!
+        }
         return space.isBomb
             ? space.isOpen || gameFinished
                 ? "#F00"
@@ -39,7 +42,9 @@ export const ReactDisplayerComp = ({ board, onCellClick, showBomb }: ReactDispla
     }
 
     const getBorderColor = (space: Space): string => {
-        return space.highlightColor == null ? "#999" : space.highlightColor
+        return space.highlightColor == null || space.highlightColor.split("/")[0].length == 0 
+            ? "#999"
+            : space.highlightColor.split("/")[0]
     }
 
     const onSquareClick = (ridx: number, cidx: number, isRightClick: boolean) => {

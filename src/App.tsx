@@ -71,14 +71,16 @@ const App = () => {
   }, [playerId])
 
   const runMinesweeper = () => {
-    let board: Board
-    if (useCustomBoard) {
-      board = getBoardFromString(customBoardString)
+    let newBoard: Board
+    if (displayerId == "EDITOR" && (board?.gameState == "NEW" || board?.gameState == "IN_PROGRESS")) {
+      newBoard = board!!
+    } else if (useCustomBoard) {
+      newBoard = getBoardFromString(customBoardString)
     } else {
       console.log(`Running with ${width} ${height} ${bombs}`)
-      board = getNewBoard(width, height, bombs)
+      newBoard = getNewBoard(width, height, bombs)
     }
-    minesweeper(board, displayer, player);
+    minesweeper(newBoard, displayer, player);
   }
 
   const benchmarkBot = async () => {
