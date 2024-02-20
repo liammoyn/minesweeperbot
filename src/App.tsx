@@ -3,14 +3,16 @@ import './App.css';
 import consoleDisplayer from "./displayers/consoleDisplayer" 
 import naivePlayer from "./players/naivePlayer" 
 import reactDisplayer, { ReactDisplayerComp } from "./displayers/reactDisplayer"
+import noneDisplayer from "./displayers/noneDisplayer"
 import minesweeper from './minesweeper/minesweeper';
 import { getNewBoard } from './minesweeper/boardGenerator';
 import { Button, Checkbox, MenuItem, Select, TextField } from '@mui/material';
-import { Board, Displayer, Player, Coord, Move } from './minesweeper/types';
+import { Board, Displayer, Player, Coord, Move, GameState } from './minesweeper/types';
 import userPlayer from './players/userPlayer';
 import simplePlayer from './players/simplePlayer';
 import { getBoardFromString, getStringFromBoard } from './minesweeper/boardStringInterpretor';
 import contextAwarePlayer from './players/contextAwarePlayer';
+import benchmarkDisplayer, { BenchmarkDisplayerComp } from './displayers/benchmarkDisplayer';
 
 const App = () => {
   const [height, setHeight] = useState(5);
@@ -19,7 +21,7 @@ const App = () => {
   const [displayerId, setDisplayerId] = useState("REACT");
   const [displayer, setDisplayer] = useState<Displayer>(consoleDisplayer);
   const [playerId, setPlayerId] = useState("CONTEXT");
-  const [player, setPlayer] = useState<Player>(naivePlayer);
+  const [player, setPlayer] = useState<Player>(contextAwarePlayer());
 
   const [useStepper, setUseStepper] = useState<boolean>(false);
   const [currentStepResolve, setCurrentStepResolve] = useState<() => void>();
@@ -31,6 +33,9 @@ const App = () => {
   const [currentBoardString, setCurrentBoardString] = useState<string>("");
 
   const [currentMoveResolve, setCurrentMoveResolve] = useState<(m: Move) => void>();
+
+  const [benchmarkGames, setBenchmarkGames] = useState(0);
+  const [benchmarkWins, setBenchmarkWins] = useState(0);
 
   const [board, setBoard] = useState<Board | null>(null);
 
@@ -49,24 +54,14 @@ const App = () => {
       case "REACT":
         setDisplayer(reactDisplayer(setBoard, displayDelay, useStepper ? onWaitForNextStep : null));
         break;
+      case "BENCHMARK":
+        setDisplayer(benchmarkDisplayer());
+        break;
     }
   }, [displayerId, playerId, useStepper])
 
   useEffect(() => {
-    switch (playerId) {
-      case "NAIVE":
-        setPlayer(naivePlayer);
-        break;
-      case "USER":
-        setPlayer(userPlayer(onUserMove))
-        break;
-      case "SIMPLE":
-        setPlayer(simplePlayer())
-        break;
-      case "CONTEXT":
-        setPlayer(contextAwarePlayer())
-        break;
-    }
+    setPlayer(getPlayerForId(playerId))
   }, [playerId])
 
   const runMinesweeper = () => {
@@ -78,6 +73,47 @@ const App = () => {
       board = getNewBoard(width, height, bombs)
     }
     minesweeper(board, displayer, player);
+  }
+
+  const benchmarkBot = async () => {
+    if (playerId === "USER") { throw Error("Cannot benchmark the user player") }
+    setDisplayerId("BENCHMARK")
+    
+    const batchSize = 1000
+
+    let getBatchPromise = () => new Promise<number>(res => {
+      const games: Promise<GameState>[] = new Array(batchSize)
+      for (let i = 0; i < batchSize; i++) {
+        const board: Board = getNewBoard(width, height, bombs)
+        games[i] = minesweeper(board, noneDisplayer, getPlayerForId(playerId))
+      }
+      let winCount = Promise.all(games)
+        .then((gameStatuses) => {
+          return gameStatuses.reduce((acc, gs) => acc + (gs === "WON" ? 1 : 0), 0)
+        })
+        .then(wc => {
+          setBenchmarkWins(wc)
+          setBenchmarkGames(batchSize)
+          res(wc)
+        })
+    })
+
+
+    await getBatchPromise()
+  }
+
+  const getPlayerForId = (playerId: string): Player => {
+    switch (playerId) {
+      case "NAIVE":
+        return naivePlayer
+      case "USER":
+        return userPlayer(onUserMove)()
+      case "SIMPLE":
+        return simplePlayer()
+      case "CONTEXT":
+        return contextAwarePlayer()
+    }
+    return naivePlayer;
   }
 
   const getDisplayDelay = (playerId: string): number => {
@@ -166,6 +202,7 @@ const App = () => {
         >
           <MenuItem value={"CONSOLE"}>Console</MenuItem>
           <MenuItem value={"REACT"}>React</MenuItem>
+          <MenuItem value={"BENCHMARK"}>Benchmark</MenuItem>
         </Select>
         <Select
           label="Player"
@@ -194,7 +231,18 @@ const App = () => {
         <Button onClick={runMinesweeper} variant="outlined">
           Play Minesweeper
         </Button>
+        <Button onClick={benchmarkBot} variant="outlined">
+          Benchmark Bot
+        </Button>
       </div>
+      {displayerId === "BENCHMARK" && (
+        <div>
+          <BenchmarkDisplayerComp
+            gamesPlayed={benchmarkGames}
+            wins={benchmarkWins}
+          />
+        </div>
+      )}
       {board !== null && (
         <div style={{ paddingTop: "20px", paddingBottom: "20px" }}>
           {displayerId === "REACT" && (

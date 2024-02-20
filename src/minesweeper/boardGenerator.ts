@@ -60,7 +60,6 @@ export const getNewBoard = (width: number, height: number, bombs: number): Board
         throw Error('Illegal arguments')
     }
     const grid = generateGrid(width, height, bombs);
-    console.log(grid)
     return {
         grid,
         gameState: "NEW"

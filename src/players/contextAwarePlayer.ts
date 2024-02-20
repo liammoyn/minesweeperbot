@@ -39,7 +39,7 @@ const contextAwarePlayer = (): Player => {
             const flaggedNeighbors = nonEmptyNeighbors.filter(s => s.isFlagged)
             nextMove = tryToFindMoveForSpace(space, candidateNeighbors, flaggedNeighbors.length)
             if (nextMove != null) {
-                console.log("Found normally through:", space)
+                // console.log("Found normally through:", space)
                 return nextMove;
             }
 
@@ -105,20 +105,21 @@ const contextAwarePlayer = (): Player => {
             
             let nextMove = tryToFindMoveForEdge(board, numbersOnEdge)
 
-            console.log(nextMove !== null ? nextMove : "GUESSING ", findBestUncertainMove(potentialMoves))
+            // console.log(nextMove !== null ? nextMove : "GUESSING ", findBestUncertainMove(potentialMoves))
             if (nextMove == null) {
                 nextMove = findBestUncertainMove(potentialMoves)
             }
 
-            board.grid.forEach(row => row.forEach(space => space.highlightColor = "#F22"))
-            potentialMoves.forEach(space => board.grid[space.row][space.col].highlightColor = "#22F")
-            movesOnEdge.forEach(space => board.grid[space.row][space.col].highlightColor = "#0F0")
-            numbersOnEdge.forEach(space => board.grid[space.row][space.col].highlightColor = "#FF0")
-            board.grid[nextMove.coord?.row!!][nextMove.coord?.col!!].highlightColor = "#000"
+            // board.grid.forEach(row => row.forEach(space => space.highlightColor = "#F22"))
+            // potentialMoves.forEach(space => board.grid[space.row][space.col].highlightColor = "#22F")
+            // movesOnEdge.forEach(space => board.grid[space.row][space.col].highlightColor = "#0F0")
+            // numbersOnEdge.forEach(space => board.grid[space.row][space.col].highlightColor = "#FF0")
+            // board.grid[nextMove.coord?.row!!][nextMove.coord?.col!!].highlightColor = "#000"
 
-            return new Promise(res => {
-                setTimeout(() => res(nextMove!!), 500)
-            })
+            return Promise.resolve(nextMove!!)
+            // return new Promise(res => {
+            //     setTimeout(() => res(nextMove!!), 500)
+            // })
         }
     }
 }
