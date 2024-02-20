@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { Board, Displayer, Space, Coord } from "../minesweeper/types";
+import { Board, Displayer, Space } from "../minesweeper/types";
 
 interface ReactDisplayerCompProps {
     board: Board | null,
@@ -42,7 +41,7 @@ export const ReactDisplayerComp = ({ board, onCellClick, showBomb }: ReactDispla
     }
 
     const getBorderColor = (space: Space): string => {
-        return space.highlightColor == null || space.highlightColor.split("/")[0].length == 0 
+        return space.highlightColor == null || space.highlightColor.split("/")[0].length === 0 
             ? "#999"
             : space.highlightColor.split("/")[0]
     }

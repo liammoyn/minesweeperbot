@@ -7,7 +7,7 @@ import noneDisplayer from "./displayers/noneDisplayer"
 import minesweeper from './minesweeper/minesweeper';
 import { getNewBoard } from './minesweeper/boardGenerator';
 import { Button, Checkbox, MenuItem, Select, TextField } from '@mui/material';
-import { Board, Displayer, Player, Coord, Move, GameState, Space } from './minesweeper/types';
+import { Board, Displayer, Player, Move, GameState, Space } from './minesweeper/types';
 import userPlayer from './players/userPlayer';
 import simplePlayer from './players/simplePlayer';
 import { getBoardFromString, getStringFromBoard } from './minesweeper/boardStringInterpretor';
@@ -72,7 +72,7 @@ const App = () => {
 
   const runMinesweeper = () => {
     let newBoard: Board
-    if (displayerId == "EDITOR" && (board?.gameState == "NEW" || board?.gameState == "IN_PROGRESS")) {
+    if (displayerId === "EDITOR" && (board?.gameState === "NEW" || board?.gameState === "IN_PROGRESS")) {
       newBoard = board!!
     } else if (useCustomBoard) {
       newBoard = getBoardFromString(customBoardString)
@@ -95,7 +95,7 @@ const App = () => {
         const board: Board = getNewBoard(width, height, bombs)
         games[i] = minesweeper(board, noneDisplayer, getPlayerForId(playerId, false, 0))
       }
-      let winCount = Promise.all(games)
+      Promise.all(games)
         .then((gameStatuses) => {
           return gameStatuses.reduce((acc, gs) => acc + (gs === "WON" ? 1 : 0), 0)
         })

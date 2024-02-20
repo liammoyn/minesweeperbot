@@ -22,12 +22,12 @@ export const EditorDisplayerComp = ({ board, onCellClick, onBoardChange }: Edito
         const newBoard: Board = {
             gameState: board.gameState,
             grid: board.grid.map((row, rIdx) => row.map((s, cIdx) => {
-                if (selectedCoord?.col == cIdx && selectedCoord?.row == rIdx) {
+                if (selectedCoord?.col === cIdx && selectedCoord?.row === rIdx) {
                     return {
                         ...s,
                         highlightColor: SELECTED_COLOR
                     }
-                } else if (s.highlightColor == SELECTED_COLOR) {
+                } else if (s.highlightColor === SELECTED_COLOR) {
                     return {
                         ...s,
                         highlightColor: null
@@ -110,7 +110,7 @@ export const EditorDisplayerComp = ({ board, onCellClick, onBoardChange }: Edito
             gameState: board.gameState,
             grid: updateSpaceCoordsAndBombsNear(
                 board.grid.map((row, rIdx) => row.map((s, cIdx) => {
-                    if (coord?.col == cIdx && coord?.row == rIdx) {
+                    if (coord?.col === cIdx && coord?.row === rIdx) {
                         return {
                             ...s,
                             isBomb: bomb == null ? s.isBomb : bomb,
