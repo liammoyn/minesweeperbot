@@ -7,12 +7,14 @@ import noneDisplayer from "./displayers/noneDisplayer"
 import minesweeper from './minesweeper/minesweeper';
 import { getNewBoard } from './minesweeper/boardGenerator';
 import { Button, Checkbox, MenuItem, Select, TextField } from '@mui/material';
-import { Board, Displayer, Player, Coord, Move, GameState } from './minesweeper/types';
+import { Board, Displayer, Player, Coord, Move, GameState, Space } from './minesweeper/types';
 import userPlayer from './players/userPlayer';
 import simplePlayer from './players/simplePlayer';
 import { getBoardFromString, getStringFromBoard } from './minesweeper/boardStringInterpretor';
 import contextAwarePlayer from './players/contextAwarePlayer';
 import benchmarkDisplayer, { BenchmarkDisplayerComp } from './displayers/benchmarkDisplayer';
+import { spaceToCoord } from './utils/spaceUtils';
+import editorDisplayer, { EditorDisplayerComp } from './displayers/editorDisplayer';
 
 const App = () => {
   const [height, setHeight] = useState(5);
@@ -56,6 +58,10 @@ const App = () => {
         break;
       case "BENCHMARK":
         setDisplayer(benchmarkDisplayer());
+        break;
+      case "EDITOR":
+        setBoard(getBoardFromString("ooooboooo"))
+        setDisplayer(editorDisplayer(setBoard, displayDelay, useStepper ? onWaitForNextStep : null));
         break;
     }
   }, [displayerId, playerId, useStepper])
@@ -122,6 +128,8 @@ const App = () => {
         return 1000;
       case "USER":
         return 0;
+      case "EDITOR":
+        return 0;
     }
     return 500;
   }
@@ -132,10 +140,14 @@ const App = () => {
     })
   }
 
-  const onCellClick = (coord: Coord, isRightClick: boolean) => {
-    const action = isRightClick ? "FLAG" : "POP";
-    const move: Move = { coord, action }
-    if (currentMoveResolve) {
+  const onEditorBoardChange = (newBoard: Board) => {
+    setBoard(newBoard)
+  }
+
+  const onCellClick = (space: Space, isRightClick: boolean) => {
+    if (currentMoveResolve && !space.isOpen) {
+      const action = isRightClick ? "FLAG" : "POP";
+      const move: Move = { coord: spaceToCoord(space), action }
       currentMoveResolve(move)
     }
   }
@@ -203,6 +215,7 @@ const App = () => {
           <MenuItem value={"CONSOLE"}>Console</MenuItem>
           <MenuItem value={"REACT"}>React</MenuItem>
           <MenuItem value={"BENCHMARK"}>Benchmark</MenuItem>
+          <MenuItem value={"EDITOR"}>Editor</MenuItem>
         </Select>
         <Select
           label="Player"
@@ -245,24 +258,32 @@ const App = () => {
       )}
       {board !== null && (
         <div style={{ paddingTop: "20px", paddingBottom: "20px" }}>
-          {displayerId === "REACT" && (
+          {displayerId === "REACT" ? (
             <div>
               <ReactDisplayerComp
                 board={board}
                 onCellClick={onCellClick}
                 showBomb={playerId !== "USER"}
               />
-              {useStepper && (
-                <div style={{ paddingTop: "10px" }}>
-                  <Button onClick={stepForward} variant="outlined">
-                    Step
-                  </Button>
-                </div>
-              )}
-              {showBoardString && (
-                <div>{currentBoardString}</div>
-              )}
             </div>
+          ) : displayerId === "EDITOR" ? (
+            <div>
+              <EditorDisplayerComp
+                board={board}
+                onCellClick={onCellClick}
+                onBoardChange={onEditorBoardChange}
+              />
+            </div>
+          ) : (<div />)}
+          {useStepper && (
+            <div style={{ paddingTop: "10px" }}>
+              <Button onClick={stepForward} variant="outlined">
+                Step
+              </Button>
+            </div>
+          )}
+          {showBoardString && (
+            <div>{currentBoardString}</div>
           )}
         </div>
       )}

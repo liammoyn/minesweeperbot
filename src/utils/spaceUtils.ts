@@ -5,6 +5,9 @@ export const spaceToCoord = (space: Space): Coord => ({
     row: space.row
 })
 
-export const isSame = (c1: Coord, c2: Coord): boolean => {
+export const isSame = (c1: Coord | null, c2: Coord | null): boolean => {
+    if (c1 == null || c2 == null) {
+        return c1 == c2
+    }
     return c1.col === c2.col && c1.row === c2.row
 }

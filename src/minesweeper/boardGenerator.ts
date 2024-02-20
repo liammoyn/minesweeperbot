@@ -1,22 +1,5 @@
-import { getAdjacentCoords } from "../utils/gridUtils";
+import { updateSpaceCoordsAndBombsNear } from "../utils/gridUtils";
 import { Space, Board } from "./types";
-
-
-export const populateBombCounts = (grid: Space[][]): Space[][] => {
-    return grid.map((row, rIdx) => {
-        return row.map((space, cIdx) => {
-            let bombCount = 0;
-            if (!space.isBomb) {
-                const adjacentCoords = getAdjacentCoords({ col: cIdx, row: rIdx }, grid);
-                bombCount = adjacentCoords.reduce((acc, coord) => acc + (grid[coord.row][coord.col].isBomb ? 1 : 0), 0)
-            }
-            return {
-                ...space,
-                bombsNear: bombCount
-            }
-        });
-    })
-}
 
 const generateGrid = (width: number, height: number, bombs: number): Space[][] => {
     const totalSpaces = width * height;
@@ -52,7 +35,7 @@ const generateGrid = (width: number, height: number, bombs: number): Space[][] =
         };
         return acc
     }, emptyGrid);
-    return populateBombCounts(spaceGrid)
+    return updateSpaceCoordsAndBombsNear(spaceGrid)
 }
 
 export const getNewBoard = (width: number, height: number, bombs: number): Board => {

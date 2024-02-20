@@ -9,6 +9,24 @@ export const getCoordKey = (coord: Coord): string => {
     return `r${coord.row}c${coord.col}`
 }
 
+export const updateSpaceCoordsAndBombsNear = (grid: Space[][]): Space[][] => {
+    return grid.map((row, rIdx) => {
+        return row.map((space, cIdx) => {
+            let bombCount = 0;
+            if (!space.isBomb) {
+                const adjacentCoords = getAdjacentCoords({ col: cIdx, row: rIdx }, grid);
+                bombCount = adjacentCoords.reduce((acc, coord) => acc + (grid[coord.row][coord.col].isBomb ? 1 : 0), 0)
+            }
+            return {
+                ...space,
+                bombsNear: bombCount,
+                row: rIdx,
+                col: cIdx,
+            }
+        });
+    })
+}
+
 export const getAdjacentCoords = <T,> (coord: Coord, grid: T[][], predicate?: (coord: Coord) => boolean): Coord[] => {
     const cIdx = coord.col;
     const rIdx = coord.row;

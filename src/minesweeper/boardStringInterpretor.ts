@@ -1,4 +1,4 @@
-import { populateBombCounts } from "./boardGenerator";
+import { updateSpaceCoordsAndBombsNear } from "../utils/gridUtils";
 import { Board, GameState, Space } from "./types";
 
 const factor = (num: number): number[] => {
@@ -46,7 +46,7 @@ const getGridFromString = (input: String): Space[][] => {
             [] as Space[][]
         )
 
-    return populateBombCounts(grid);
+    return updateSpaceCoordsAndBombsNear(grid);
 }
 
 const findGameState = (grid: Space[][]): GameState => {

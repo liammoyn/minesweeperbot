@@ -3,7 +3,7 @@ import { Board, Displayer, Space, Coord } from "../minesweeper/types";
 
 interface ReactDisplayerCompProps {
     board: Board | null,
-    onCellClick: (coord: Coord, isRightClick: boolean) => void,
+    onCellClick: (space: Space, isRightClick: boolean) => void,
     showBomb: boolean,
 }
 
@@ -53,9 +53,9 @@ export const ReactDisplayerComp = ({ board, onCellClick, showBomb }: ReactDispla
             bombsNear: ${boardSpace?.bombsNear},
             highlightColor: ${boardSpace?.highlightColor},
         }`)
-        if (!boardSpace?.isOpen) {
+        if (boardSpace != null) {
             // Send event to parent that will run take turn
-            onCellClick({ row: ridx, col: cidx }, isRightClick)
+            onCellClick(boardSpace!!, isRightClick)
         }
     }
 
