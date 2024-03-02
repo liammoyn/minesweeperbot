@@ -184,6 +184,7 @@ const App = () => {
                 type="string"
                 value={customBoardString}
                 onChange={({ target }) => setCustomBoardString(target.value as unknown as string)}
+                onKeyDown={(e) => e.keyCode === 13 && setBoard(getBoardFromString(customBoardString)) }
               />
             </div>
           ) : (
