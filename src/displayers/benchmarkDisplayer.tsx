@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { Board, Displayer, Space, Coord } from "../minesweeper/types";
+import { Board, Displayer } from "../minesweeper/types";
 
 interface BenchmarkDisplayerCompProps {
     gamesPlayed: number,

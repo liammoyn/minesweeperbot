@@ -1,4 +1,3 @@
-
 export interface Displayer {
     displayBoard: (board: Board) => Promise<void>
 }

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import './App.css';
 import consoleDisplayer from "./displayers/consoleDisplayer" 
 import naivePlayer from "./players/naivePlayer" 
 import reactDisplayer, { ReactDisplayerComp } from "./displayers/reactDisplayer"
@@ -15,6 +14,7 @@ import contextAwarePlayer from './players/contextAwarePlayer';
 import benchmarkDisplayer, { BenchmarkDisplayerComp } from './displayers/benchmarkDisplayer';
 import { spaceToCoord } from './utils/spaceUtils';
 import editorDisplayer, { EditorDisplayerComp } from './displayers/editorDisplayer';
+import './App.css';
 
 const App = () => {
   const [height, setHeight] = useState(5);
