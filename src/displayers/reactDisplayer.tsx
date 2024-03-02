@@ -2,7 +2,7 @@ import { Board, Displayer, Space } from "../minesweeper/types";
 
 interface ReactDisplayerCompProps {
     board: Board | null,
-    onCellClick: (space: Space, isRightClick: boolean) => void,
+    onCellClick: (space: Space, isRightClick: boolean, isShiftClick: boolean) => void,
     showBomb: boolean,
 }
 
@@ -46,7 +46,7 @@ export const ReactDisplayerComp = ({ board, onCellClick, showBomb }: ReactDispla
             : space.highlightColor.split("/")[0]
     }
 
-    const onSquareClick = (ridx: number, cidx: number, isRightClick: boolean) => {
+    const onSquareClick = (ridx: number, cidx: number, isRightClick: boolean, isShiftClick: boolean) => {
         const boardSpace = board?.grid[ridx][cidx];
         console.log(`{
             row: ${ridx},
@@ -59,7 +59,7 @@ export const ReactDisplayerComp = ({ board, onCellClick, showBomb }: ReactDispla
         }`)
         if (boardSpace != null) {
             // Send event to parent that will run take turn
-            onCellClick(boardSpace!!, isRightClick)
+            onCellClick(boardSpace!!, isRightClick, isShiftClick)
         }
     }
 
@@ -85,8 +85,8 @@ export const ReactDisplayerComp = ({ board, onCellClick, showBomb }: ReactDispla
                                     verticalAlign: "middle",
                                     lineHeight: "30px",
                                 }}
-                                onClick={() => onSquareClick(ridx, cidx, false)}
-                                onContextMenu={e => {e.preventDefault(); onSquareClick(ridx, cidx, true);}}
+                                onClick={(e) => onSquareClick(ridx, cidx, false, e.shiftKey)}
+                                onContextMenu={e => {e.preventDefault(); onSquareClick(ridx, cidx, true, e.shiftKey);}}
                             >
                                 {
                                     space.isOpen 

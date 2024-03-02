@@ -15,30 +15,25 @@ interface EditorDisplayerCompProps {
 const SELECTED_COLOR = "/#FA0"
 
 export const EditorDisplayerComp = ({ board, onCellClick, onBoardChange }: EditorDisplayerCompProps) => {
-    const [selectedCoord, setSelectedCoord] = useState<Coord | null>(null);
+    const [selectedCoords, setSelectedCoords] = useState<Coord[]>([]);
 
     useEffect(() => {
         if (board == null) { return; }
-        const newBoard: Board = {
-            gameState: board.gameState,
-            grid: board.grid.map((row, rIdx) => row.map((s, cIdx) => {
-                if (selectedCoord?.col === cIdx && selectedCoord?.row === rIdx) {
-                    return {
-                        ...s,
-                        highlightColor: SELECTED_COLOR
-                    }
-                } else if (s.highlightColor === SELECTED_COLOR) {
-                    return {
-                        ...s,
-                        highlightColor: null
-                    }
-                } else {
-                    return s
-                }
-            }))
+        onBoardChange(addSelectedHighlightColor(board, selectedCoords))
+    }, [selectedCoords])
+
+    useEffect(() => {
+        if (board == null) { return; }
+        if (selectedCoords.length > 0) {
+            document.addEventListener("keydown", onKeyDown)
+        } else {
+            document.removeEventListener("keydown", onKeyDown)
         }
-        onBoardChange(newBoard)
-    }, [selectedCoord])
+
+        return () => {
+            document.removeEventListener("keydown", onKeyDown)
+        }
+    }, [selectedCoords, board])
 
     const addRow = () => {
         if (board == null) {
@@ -89,28 +84,73 @@ export const EditorDisplayerComp = ({ board, onCellClick, onBoardChange }: Edito
         onBoardChange(newBoard)
     }
 
-    const onSquareClick = (space: Space, isRightClick: boolean) => {
+    const onSquareClick = (space: Space, isRightClick: boolean, isShiftClick: boolean) => {
+        console.log("Is shift", isShiftClick)
         const thisCoord = spaceToCoord(space)
-        if (isSame(thisCoord, selectedCoord)) {
-            setSelectedCoord(null)
+        const alreadySelectedCoord = selectedCoords.find(sc => isSame(sc, thisCoord))
+        if (alreadySelectedCoord != null) {
+            setSelectedCoords(selectedCoords.filter(sc => !isSame(sc, thisCoord)))
         } else {
-            setSelectedCoord(thisCoord)
+            if (isShiftClick) {
+                setSelectedCoords([ ...selectedCoords, thisCoord ])
+            } else {
+                setSelectedCoords([ thisCoord ])
+            }
         }
         onCellClick(space, isRightClick)
     }
 
+    const onKeyDown = (event: KeyboardEvent) => {
+        if (board !== null && selectedCoords.length > 0) {
+            const selectedSpaces = selectedCoords.map(sc => board.grid[sc.row][sc.col])
+            let newBoard: Board | null = board
+            switch (event.key) {
+                case "b":
+                    newBoard = onChangeProperty(
+                        board,
+                        selectedCoords,
+                        !selectedSpaces[0].isBomb,
+                        null,
+                        null,
+                    )
+                    break;
+                case "o":
+                    newBoard = onChangeProperty(
+                        board,
+                        selectedCoords,
+                        null,
+                        !selectedSpaces[0].isOpen,
+                        null,
+                    )
+                    break;
+                case "f":
+                    newBoard = onChangeProperty(
+                        board,
+                        selectedCoords,
+                        null,
+                        null,
+                        !selectedSpaces[0].isFlagged,
+                    )
+                    break;
+            }
+            onBoardChange(newBoard as Board)
+        }
+    }
+
     const onChangeProperty = (
-        coord: Coord,
+        board: Board,
+        coords: Coord[],
         bomb: boolean | null = null,
         open: boolean | null = null,
         flagged: boolean | null = null,
-    ) => {
-        if (board == null) { return; }
+    ): Board | null => {
+        console.log(coords, bomb, open, flagged)
+        if (board == null) { return null; }
         const newBoard: Board = {
             gameState: board.gameState,
             grid: updateSpaceCoordsAndBombsNear(
                 board.grid.map((row, rIdx) => row.map((s, cIdx) => {
-                    if (coord?.col === cIdx && coord?.row === rIdx) {
+                    if (coords.some(c => c.col === cIdx && c.row === rIdx)) {
                         return {
                             ...s,
                             isBomb: bomb == null ? s.isBomb : bomb,
@@ -123,7 +163,29 @@ export const EditorDisplayerComp = ({ board, onCellClick, onBoardChange }: Edito
                 }))
             )
         }
-        onBoardChange(newBoard)
+        return addSelectedHighlightColor(newBoard, coords)
+    }
+
+    const addSelectedHighlightColor = (board: Board, selectedCoords: Coord[]): Board => {
+        const newBoard: Board = {
+            gameState: board.gameState,
+            grid: board.grid.map((row, rIdx) => row.map((s, cIdx) => {
+                if (selectedCoords.some(sc => sc.col === cIdx && sc.row === rIdx)) {
+                    return {
+                        ...s,
+                        highlightColor: SELECTED_COLOR
+                    }
+                } else if (s.highlightColor === SELECTED_COLOR) {
+                    return {
+                        ...s,
+                        highlightColor: null
+                    }
+                } else {
+                    return s
+                }
+            }))
+        }
+        return newBoard
     }
 
     return (
