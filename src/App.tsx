@@ -11,6 +11,7 @@ import userPlayer from './players/userPlayer';
 import simplePlayer from './players/simplePlayer';
 import { getBoardFromString, getStringFromBoard } from './minesweeper/boardStringInterpretor';
 import contextAwarePlayer from './players/contextAwarePlayer';
+import contextAwarePlayerV2 from './players/contextAwarePlayerV2';
 import benchmarkDisplayer, { BenchmarkDisplayerComp } from './displayers/benchmarkDisplayer';
 import { spaceToCoord } from './utils/spaceUtils';
 import editorDisplayer, { EditorDisplayerComp } from './displayers/editorDisplayer';
@@ -22,7 +23,7 @@ const App = () => {
   const [bombs, setBombs] = useState(5);
   const [displayerId, setDisplayerId] = useState("REACT");
   const [displayer, setDisplayer] = useState<Displayer>(consoleDisplayer);
-  const [playerId, setPlayerId] = useState("CONTEXT");
+  const [playerId, setPlayerId] = useState("CONTEXTV2");
   const [player, setPlayer] = useState<Player>(contextAwarePlayer(true, 1000));
 
   const [useStepper, setUseStepper] = useState<boolean>(false);
@@ -87,7 +88,7 @@ const App = () => {
     if (playerId === "USER") { throw Error("Cannot benchmark the user player") }
     setDisplayerId("BENCHMARK")
     
-    const batchSize = 1000
+    const batchSize = 50000
 
     let getBatchPromise = () => new Promise<number>(res => {
       const games: Promise<GameState>[] = new Array(batchSize)
@@ -120,6 +121,8 @@ const App = () => {
         return simplePlayer(showHighlights, delayMs)
       case "CONTEXT":
         return contextAwarePlayer(showHighlights, delayMs)
+      case "CONTEXTV2":
+        return contextAwarePlayerV2(showHighlights, delayMs)
     }
     return naivePlayer;
   }
@@ -229,6 +232,7 @@ const App = () => {
           <MenuItem value={"NAIVE"}>Naive</MenuItem>
           <MenuItem value={"SIMPLE"}>Simple</MenuItem>
           <MenuItem value={"CONTEXT"}>Context Aware</MenuItem>
+          <MenuItem value={"CONTEXTV2"}>Context Aware V2</MenuItem>
         </Select>
         <div>
           <label>Use Stepper?</label>

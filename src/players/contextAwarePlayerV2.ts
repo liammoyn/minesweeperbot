@@ -11,7 +11,7 @@ import { isSame, spaceToCoord } from "../utils/spaceUtils";
  * Uses context of other numbered squares to find bombs / frees.
  * Tries to optimize computation.
  */
-const contextAwarePlayer = (setHighlights: boolean, delayMs: number): Player => {
+const contextAwarePlayerV2 = (setHighlights: boolean, delayMs: number): Player => {
     let potentialMoves: Space[] = []
 
     function tryToFindMoveForSpace(space: Space, candidateNeighbors: Space[], knownBombNumber: number): Move | null {
@@ -31,6 +31,8 @@ const contextAwarePlayer = (setHighlights: boolean, delayMs: number): Player => 
 
     function tryToFindMoveForEdge(board: Board, numbersOnEdge: Set<Space>): Move | null {
         let nextMove: Move | null = null
+        let spaceToCandidates: Map<Space, Space[]> = new Map()
+        let spaceToFlags: Map<Space, number> = new Map()
 
         for (let space of numbersOnEdge) {
             const coord = { row: space.row, col: space.col }
@@ -43,26 +45,67 @@ const contextAwarePlayer = (setHighlights: boolean, delayMs: number): Player => 
                 return nextMove;
             }
 
-            // Gets a list of numbersOnEdge that are adjacent to every candidateNeighbor and adds them
-            // to the reprocessing queue.
-            const spacesToReprocess = getCrossSection(
-                candidateNeighbors,
-                board.grid,
-                (s: Space) => !isSame(s, space) && numbersOnEdge.has(s)
-            )
+            spaceToCandidates.set(space, candidateNeighbors)
+            spaceToFlags.set(space, flaggedNeighbors.length)
+        }
 
-            // Then that number's candidates that aren't neighbors of us can be processed 
-            //  with (neighborNum - (space.bombsNear - flaggedNeighbors.length)) bombs near
-            for (let reprocessSpace of spacesToReprocess) {
-                const theseEligibleSpaces = new Set(getAdjacentTs(
-                    reprocessSpace,
+
+        for (let space of numbersOnEdge) {
+            // For each space, get a list of numbers who's candidates are all adjacent to this space.
+            const theseCandidates = spaceToCandidates.get(space)!!
+            const possibleNumbers = new Set(
+                theseCandidates.flatMap(candidate => getAdjacentTs(
+                    candidate,
                     board.grid,
-                    (s: Space) => !s.isOpen && !s.isFlagged && !isSame(s, space) && !isNeighborS(s, space)
+                    s => numbersOnEdge.has(s) && !isSame(s, space)
                 ))
-                let thisExtraBombs = space.bombsNear - flaggedNeighbors.length
+            )
+            const usefulNumbers = Array.from(possibleNumbers).filter(s => {
+                const thoseCandidates = spaceToCandidates.get(s)
+                return thoseCandidates?.every(c => isNeighborS(space, c))
+            })
 
-                const reprocessSpaceFlags = getAdjacentTs(reprocessSpace, board.grid, (s: Space) => s.isFlagged)
-                nextMove = tryToFindMoveForSpace(reprocessSpace, Array.from(theseEligibleSpaces), reprocessSpaceFlags.length + thisExtraBombs)
+            // For each  of usefulNumbers, attempt to reprocess this space's candidates that aren't shared with number
+            for (let numberSpace of usefulNumbers) {
+                const eligibleSpaces = theseCandidates.filter(c => !isNeighborS(c, numberSpace))
+                const thisFlags = spaceToFlags.get(space)!!
+                const extraBombs = numberSpace.bombsNear - spaceToFlags.get(numberSpace)!!
+                nextMove = tryToFindMoveForSpace(space, eligibleSpaces, thisFlags + extraBombs)
+                if (nextMove !== null) {
+                    return nextMove
+                }
+            }
+
+            // For each permutation of usefulNumbers who's candidate numbers are distinct, attempt to reprocess
+            // this space's candidates that aren't shared with any number in the permutation
+            // TODO: This is slow
+            const noSharedCandidates = (s1: Space, s2: Space) => {
+                const c1s = spaceToCandidates.get(s1)!!
+                const c2s = spaceToCandidates.get(s2)!!
+                return c1s.every(c1 => c2s.every(c2 => !isSame(c1, c2)))
+            }
+            const permutations: Space[][] = []
+            for (let i = 0; i < usefulNumbers.length; i++) {
+                const thisNumber = usefulNumbers[i]
+                const newPermutations: Space[][] = [[thisNumber]]
+                for (let j = 0; j < permutations.length; j++) {
+                    const thisPerm = permutations[j]
+                    if (thisPerm.every(s => noSharedCandidates(s, thisNumber))) {
+                        newPermutations.push([...thisPerm, thisNumber])
+                    }
+                }
+                permutations.push(...newPermutations)
+            }
+            // console.log("this space", space)
+            // console.log("useful numbers", usefulNumbers)
+            // console.log("permutations", permutations)
+
+            for (let permutation of permutations) {
+                if (permutation.length == 1) { continue; }
+                const eligibleSpaces = theseCandidates.filter(c => permutation.every(numberSpace => !isNeighborS(numberSpace, c)))
+                const thisFlags = spaceToFlags.get(space)!!
+                const extraBombs = permutation.reduce((acc, cur) => acc + (cur.bombsNear - spaceToFlags.get(cur)!!), 0)
+                nextMove = tryToFindMoveForSpace(space, eligibleSpaces, thisFlags + extraBombs)
                 if (nextMove !== null) {
                     return nextMove
                 }
@@ -127,4 +170,4 @@ const contextAwarePlayer = (setHighlights: boolean, delayMs: number): Player => 
     }
 }
 
-export default contextAwarePlayer;
+export default contextAwarePlayerV2;
