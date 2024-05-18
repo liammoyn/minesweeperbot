@@ -110,7 +110,7 @@ export const EditorDisplayerComp = ({ board, onCellClick, onBoardChange }: Edito
                         board,
                         selectedCoords,
                         !selectedSpaces[0].isBomb,
-                        null,
+                        !selectedSpaces[0].isBomb ? false : null,
                         null,
                     )
                     break;
@@ -118,7 +118,7 @@ export const EditorDisplayerComp = ({ board, onCellClick, onBoardChange }: Edito
                     newBoard = onChangeProperty(
                         board,
                         selectedCoords,
-                        null,
+                        !selectedSpaces[0].isOpen ? false : null,
                         !selectedSpaces[0].isOpen,
                         null,
                     )
@@ -128,7 +128,7 @@ export const EditorDisplayerComp = ({ board, onCellClick, onBoardChange }: Edito
                         board,
                         selectedCoords,
                         null,
-                        null,
+                        !selectedSpaces[0].isFlagged ? false : null,
                         !selectedSpaces[0].isFlagged,
                     )
                     break;
