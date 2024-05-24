@@ -1,5 +1,12 @@
 import { Space, Coord } from "../minesweeper/types";
 
+export const coordToString = (coord: Coord) => `${coord.col}#${coord.row}`
+
+export const stringToCoord = (coordString: string): Coord => ({
+    col: parseInt(coordString.split("#")[0]),
+    row: parseInt(coordString.split("#")[1]),
+})
+
 export const spaceToCoord = (space: Space): Coord => ({
     col: space.col,
     row: space.row

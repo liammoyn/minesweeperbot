@@ -68,6 +68,7 @@ const applyMove = (board: Board, move: Move): Board | null => {
     if (nextSpace.isBomb) {
         const newGrid = board.grid;
         newGrid[row][col].isOpen = true;
+        // console.log(getStringFromBoard(board.grid))
         return {
             ...board,
             grid: newGrid,

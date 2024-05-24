@@ -16,6 +16,7 @@ import benchmarkDisplayer, { BenchmarkDisplayerComp } from './displayers/benchma
 import { spaceToCoord } from './utils/spaceUtils';
 import editorDisplayer, { EditorDisplayerComp } from './displayers/editorDisplayer';
 import './App.css';
+import cspPlayer from './players/cspPlayer';
 
 const App = () => {
   const [height, setHeight] = useState(5);
@@ -88,7 +89,7 @@ const App = () => {
     if (playerId === "USER") { throw Error("Cannot benchmark the user player") }
     setDisplayerId("BENCHMARK")
     
-    const batchSize = 50000
+    const batchSize = 5000
 
     let getBatchPromise = () => new Promise<number>(res => {
       const games: Promise<GameState>[] = new Array(batchSize)
@@ -123,6 +124,8 @@ const App = () => {
         return contextAwarePlayer(showHighlights, delayMs)
       case "CONTEXTV2":
         return contextAwarePlayerV2(showHighlights, delayMs)
+      case "CSP":
+        return cspPlayer(showHighlights, delayMs)
     }
     return naivePlayer;
   }
@@ -233,6 +236,7 @@ const App = () => {
           <MenuItem value={"SIMPLE"}>Simple</MenuItem>
           <MenuItem value={"CONTEXT"}>Context Aware</MenuItem>
           <MenuItem value={"CONTEXTV2"}>Context Aware V2</MenuItem>
+          <MenuItem value={"CSP"}>CSP</MenuItem>
         </Select>
         <div>
           <label>Use Stepper?</label>
