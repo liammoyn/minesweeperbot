@@ -31,29 +31,69 @@ import { coordToString, isSame, spaceToCoord, stringToCoord } from "../utils/spa
 const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
     let potentialMoves: Space[] = []
 
+    type CountToConstraints = {
+        [countKey: number]: string[][]
+    }
     type MoveGraph = {
-        [key: string]: {
-            "count": number,
-            "adjacents": string[]
-        }[]
-    }    
+        [coordKey: string]: CountToConstraints
+    }
 
     const makeGraph = (movesOnEdge: Set<Space>, grid: Space[][]): MoveGraph => {
         const moveGraph: MoveGraph = {}
         for (let space of movesOnEdge) {
-            const graphEdges = []
+            const graphEdges: CountToConstraints = {}
             const numberNeighbors = getAdjacentTs(space, grid, s => s.isOpen && s.bombsNear > 0)
             for (let numberNeighbor of numberNeighbors) {
-                const adjacentMoves = getAdjacentTs(numberNeighbor, grid, s => !isSame(s, space) && !s.isOpen)
-                graphEdges.push({
-                    "count": numberNeighbor.bombsNear - adjacentMoves.reduce((acc, cur) => acc + Number(cur.isFlagged) , 0),
-                    "adjacents": adjacentMoves.filter(s => !s.isFlagged).map(s => coordToString(s))
-                })
+                const adjacentCloseds = getAdjacentTs(numberNeighbor, grid, s => !isSame(s, space) && !s.isOpen)
+                const count = numberNeighbor.bombsNear - adjacentCloseds.reduce((acc, cur) => acc + Number(cur.isFlagged) , 0)
+                const adjacentMoves = adjacentCloseds.filter(s => !s.isFlagged).map(s => coordToString(s))
+                graphEdges[count] = [ ...(graphEdges[count] ?? []), adjacentMoves ]
             }
-            moveGraph[coordToString(space)] = graphEdges.sort((a, b) => a.count - b.count)
+            for (let countKey in graphEdges) {
+                graphEdges[countKey].sort((a, b) => a.length - b.length)
+            }
+
+            moveGraph[coordToString(space)] = graphEdges
         }
 
         return moveGraph
+    }
+
+    const findEasyMoves = (moveGraph: MoveGraph): Move | null => {
+        for (let ckey in moveGraph) {
+            for (let countKey in moveGraph[ckey]) {
+                const count = Number(countKey)
+                let constraints = moveGraph[ckey][count]
+
+                for (let constraint of constraints) {
+                    if (constraint.length < count) {
+                        return {
+                            coord: stringToCoord(ckey),
+                            action: "FLAG"
+                        }
+                    } else if (count == 0) {
+                        return {
+                            coord: stringToCoord(ckey),
+                            action: "POP"
+                        }
+                    }
+                }
+
+                for (let i = 0; i < constraints.length - 1; i++) {
+                    for (let j = i + 1; j < constraints.length; j++) {
+                        let smallSet = new Set(constraints[i])
+                        let bigSet = new Set(constraints[j])
+                        if (smallSet.size < bigSet.size && Array.from(smallSet.values()).every(s => bigSet.has(s))) {
+                            return {
+                                coord: stringToCoord(Array.from(bigSet).filter(s => !smallSet.has(s))[0]),
+                                action: "POP"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null
     }
 
     const findMove = (movesOnEdge: Set<Space>, grid: Space[][]): Move => {
@@ -61,50 +101,8 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
         const moveGraph = makeGraph(movesOnEdge, grid)
         console.log(moveGraph)
 
-        for (let ckey in moveGraph) {
-            for (let constraint of moveGraph[ckey]) {
-                if (constraint.adjacents.length < constraint.count) {
-                    return {
-                        coord: stringToCoord(ckey),
-                        action: "FLAG"
-                    }
-                } else if (constraint.count == 0) {
-                    return {
-                        coord: stringToCoord(ckey),
-                        action: "POP"
-                    }
-                }
-            }
-
-            const groupedByCount = moveGraph[ckey].reduce((acc, cur) => {
-                if (acc[cur.count] == null) {
-                    acc[cur.count] = [cur.adjacents]
-                } else {
-                    acc[cur.count] = [ ...acc[cur.count], cur.adjacents ].sort((a, b) => a.length - b.length)
-                }
-                return acc
-            }, {} as { [n: number]: string[][] })
-            let ans = null
-            Object.values(groupedByCount).forEach(constraints => {
-                for (let i = 0; i < constraints.length - 1; i++) {
-                    for (let j = i + 1; j < constraints.length; j++) {
-                        let smallSet = new Set(constraints[i])
-                        let bigSet = new Set(constraints[j])
-                        if (smallSet.size < bigSet.size && Array.from(smallSet.values()).every(s => bigSet.has(s))) {
-                            ans = {
-                                coord: stringToCoord(Array.from(bigSet).filter(s => !smallSet.has(s))[0]),
-                                action: "POP"
-                            }
-                            break;
-                        }
-                    }
-                }
-            })
-
-            if (ans != null) {
-                return ans
-            }
-        }
+        const maybeMove = findEasyMoves(moveGraph)
+        
         // Reduce using backtracking
         /*
         Rules for graph:
@@ -115,7 +113,7 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
         */
 
 
-        return {
+        return maybeMove ?? {
             coord: movesOnEdge.values().next().value,
             action: "POP"
         }
