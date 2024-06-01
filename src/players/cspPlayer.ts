@@ -6,12 +6,15 @@ import { coordToString, isSame, spaceToCoord, stringToCoord } from "../utils/spa
 
 {
     c1: {
-        1: [c2, c3],
-        1: [c4],
-        2: [c5, c6]
+        1: [[c2, c3], [c4]],
+        2: [[c5, c6]]
     },
     c2: {
-        1: [c1, c3]
+        1: [[c1, c3]]
+    },
+    c3: {
+        1: [[c1, c2]]
+        2: [[c4, c5], [c6, c7, c8]]
     }
 }
 
@@ -38,6 +41,13 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
         [coordKey: string]: CountToConstraints
     }
 
+    const checkExhaustive = (moveGraph: MoveGraph): Move | null => {
+
+
+        return null
+    }
+
+    // Create the graph with all moves on the edge
     const makeGraph = (movesOnEdge: Set<Space>, grid: Space[][]): MoveGraph => {
         const moveGraph: MoveGraph = {}
         for (let space of movesOnEdge) {
@@ -59,6 +69,7 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
         return moveGraph
     }
 
+    // Find moves that can be determined by looking at a single coordinate at a time
     const findEasyMoves = (moveGraph: MoveGraph): Move | null => {
         for (let ckey in moveGraph) {
             for (let countKey in moveGraph[ckey]) {
@@ -96,12 +107,44 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
         return null
     }
 
+    // Split the move graph into 1 or more unconnected graphs
+    const splitGraph = (moveGraph: MoveGraph): MoveGraph[] => {
+        const result = []
+        const visited = new Set<String>()
+        for (let coord of Object.keys(moveGraph)) {
+            if (visited.has(coord)) {
+                continue;
+            }
+            const thisVisited = new Set<string>()
+            let todos: string[] = [ coord ]
+            while (todos.length > 0) {
+                const cur = todos.pop()!!
+                if (thisVisited.has(cur)) {
+                    continue;
+                } else {
+                    thisVisited.add(cur)
+                }
+                const allNeighborCoords = Object.values(moveGraph[cur])
+                    .flat()
+                    .flat()
+                    .filter(c => !thisVisited.has(c))
+                const nextCoords: Set<string> = new Set(allNeighborCoords)
+                todos = [ ...todos, ...nextCoords]
+            }
+            const subMap: MoveGraph = {}
+            thisVisited.forEach(visitedCoord => subMap[visitedCoord] = moveGraph[visitedCoord])
+            thisVisited.forEach(visitedCoord => visited.add(visitedCoord))
+            result.push(subMap)
+        }
+        return result;
+    }
+
     const findMove = (movesOnEdge: Set<Space>, grid: Space[][]): Move => {
         // Construct graph of moves on edge
         const moveGraph = makeGraph(movesOnEdge, grid)
-        console.log(moveGraph)
+        console.log("Full Graph", moveGraph)
 
-        const maybeMove = findEasyMoves(moveGraph)
+        let maybeMove = findEasyMoves(moveGraph)
         
         // Reduce using backtracking
         /*
@@ -109,8 +152,17 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
         If a node has an edge who's count - 1 == some adjacents.length, then the node is a bomb (and other adjacents)
         Then remove the node from all other adjacents that they appear in and lower the count
         If during this process, any node now has an adjacents who's length == count - 1, this node is not a bomb (and other ajacents)
-
         */
+       
+        if (maybeMove == null) {
+            const subGraphs = splitGraph(moveGraph)
+            for (let subGraph of subGraphs) { 
+                maybeMove = checkExhaustive(subGraph)
+                if (maybeMove != null) {
+                    return maybeMove
+                }
+            }
+        }
 
 
         return maybeMove ?? {
