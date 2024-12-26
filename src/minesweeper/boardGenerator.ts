@@ -48,3 +48,10 @@ export const getNewBoard = (width: number, height: number, bombs: number): Board
         gameState: "NEW"
     }
 }
+
+export const copyBoard = (board: Board): Board => {
+    return {
+        gameState: board.gameState,
+        grid: board.grid.map(r => r.map(s => ({ ...s })))
+    }
+}

@@ -33,3 +33,12 @@ export interface Board {
     grid: Space[][],
     gameState: GameState,
 }
+
+export interface BenchmarkResult {
+    initialBoard: Board,
+    results: {
+        [playerId: string]: GameState
+    }
+}
+
+export type BenchmarkResults = BenchmarkResult[]

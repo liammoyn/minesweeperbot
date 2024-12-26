@@ -1,25 +1,58 @@
-import { Board, Displayer } from "../minesweeper/types";
+import { useEffect, useState } from "react";
+import { BenchmarkResults, Board, Displayer } from "../minesweeper/types";
 
 interface BenchmarkDisplayerCompProps {
-    gamesPlayed: number,
-    wins: number,
+    benchmarkResults: BenchmarkResults
 }
 
-export const BenchmarkDisplayerComp = ({ gamesPlayed, wins }: BenchmarkDisplayerCompProps) => {
+type PlayerToWins = { [playerId: string]: number }
+
+export const BenchmarkDisplayerComp = ({ benchmarkResults }: BenchmarkDisplayerCompProps) => {
+    const [playerToWins, setPlayerToWins] = useState<PlayerToWins>({})
+    const [totalGames, setTotalGames] = useState<number>(0)
+    
+    useEffect(() => {
+        setTotalGames(benchmarkResults.length)
+        if (benchmarkResults.length > 0) {
+            const ptw: PlayerToWins = Object.fromEntries(Object.entries(benchmarkResults[0].results).map(e => [e[0], 0]))
+            benchmarkResults.forEach(benchmarkResult => {
+                Object.entries(benchmarkResult.results).forEach(([pid, gamestate]) => {
+                    if (gamestate == "WON") {
+                        ptw[pid]++
+                    }
+                })
+            })
+            setPlayerToWins(ptw)
+        } else {
+            setPlayerToWins({})
+        }
+    }, [benchmarkResults])
 
     return (
-        <div style={{ display: "flex", flexFlow: "column", alignItems: "center" }}>
+        <div>
             <div>
                 <label>Games Played:</label>
-                <div>{gamesPlayed}</div>
+                <div>{totalGames}</div>
             </div>
-            <div>
-                <label>Wins:</label>
-                <div>{wins}</div>
-            </div>
-            <div>
-                <label>Win Percentage:</label>
-                <div>{`${100 * wins / gamesPlayed}%`}</div>
+            <div style={{ display: "flex", flexFlow: "row", alignItems: "top", justifyContent: "center" }}>
+                {
+                    Object.entries(playerToWins).map(([pid, wins]) => (
+                        <div style={{ display: "flex", flexFlow: "column", alignItems: "center" }}>
+                            <div>
+                                <label>Player:</label>
+                                <div>{pid}</div>
+                            </div>
+                            <div>
+                                <label>Wins:</label>
+                                <div>{wins}</div>
+                            </div>
+                            <div>
+                                <label>Win Percentage:</label>
+                                <div>{`${100 * wins / totalGames}%`}</div>
+                            </div>
+                        </div>
+                    ))
+                }
             </div>
         </div>
     )
