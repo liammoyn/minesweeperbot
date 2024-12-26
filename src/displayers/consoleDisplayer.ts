@@ -5,11 +5,13 @@ export const getBoardString = (board: Board): string => {
         const rowString = row.reduce((acc, space, cdx) => {
             const spaceString = space.isOpen 
                 ? space.isBomb
-                    ? "X"
+                    ? "!"
                     : space.bombsNear 
-                : space.isBomb
-                    ? "x"
-                    : "o"
+                : space.isFlagged
+                    ? "F"
+                    : space.isBomb
+                        ? "x"
+                        : "o"
             const seperator = cdx > 0 ? " " : ""
             return `${acc}${seperator}${spaceString}`
         }, "");
