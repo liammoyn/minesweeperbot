@@ -1,11 +1,12 @@
 import { getAdjacentCoords, onGrid } from "../utils/gridUtils";
+import { copyBoard } from "./boardGenerator";
 import { getStringFromBoard } from "./boardStringInterpretor";
 import { Board, Player, Move, Coord, Displayer, GameState } from "./types";
 
 const minesweeper = async (initialBoard: Board, displayer: Displayer, player: Player): Promise<GameState> => {
-    let board = initialBoard;
+    let board = copyBoard(initialBoard);
     player.newGame(board)
-    
+    const start = Date.now()
     while (["IN_PROGRESS", "NEW" ].includes(board.gameState)) {
         let newBoard
         try {
@@ -21,11 +22,13 @@ const minesweeper = async (initialBoard: Board, displayer: Displayer, player: Pl
             } else {
                 console.log("null board")
             }
+            console.log(`[Los] Finished game execution in ${(Date.now() - start) / 1000} s`, getStringFromBoard(initialBoard.grid))
             return "LOST"
         }
         board = newBoard
     }
     displayBoard(displayer, board)
+    console.log(`[Win] Finished game execution in ${(Date.now() - start) / 1000} s`, getStringFromBoard(initialBoard.grid))
     return board.gameState
 }
 

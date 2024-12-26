@@ -37,7 +37,7 @@ export const BenchmarkDisplayerComp = ({ benchmarkResults }: BenchmarkDisplayerC
             <div style={{ display: "flex", flexFlow: "row", alignItems: "top", justifyContent: "center" }}>
                 {
                     Object.entries(playerToWins).map(([pid, wins]) => (
-                        <div style={{ display: "flex", flexFlow: "column", alignItems: "start", padding: "4px" }}>
+                        <div key={pid} style={{ display: "flex", flexFlow: "column", alignItems: "start", padding: "4px" }}>
                             <div style={{ display: "flex", alignItems: "center" }}>
                                 <label style={{ paddingRight: "2px" }}>Player:</label>
                                 <div>{pid}</div>

@@ -4,7 +4,7 @@ import naivePlayer from "./players/naivePlayer"
 import reactDisplayer, { ReactDisplayerComp } from "./displayers/reactDisplayer"
 import noneDisplayer from "./displayers/noneDisplayer"
 import minesweeper from './minesweeper/minesweeper';
-import { copyBoard, getNewBoard } from './minesweeper/boardGenerator';
+import { getNewBoard } from './minesweeper/boardGenerator';
 import { Button, Checkbox, FormControl, FormControlLabel, FormGroup, MenuItem, Select, TextField } from '@mui/material';
 import { Board, Displayer, Player, Move, GameState, Space, BenchmarkResults, BenchmarkResult } from './minesweeper/types';
 import userPlayer from './players/userPlayer';
@@ -17,6 +17,7 @@ import { spaceToCoord } from './utils/spaceUtils';
 import editorDisplayer, { EditorDisplayerComp } from './displayers/editorDisplayer';
 import './App.css';
 import cspPlayer from './players/cspPlayer';
+import combinedPlayer from './players/combinedPlayer';
 
 const App = () => {
   const [height, setHeight] = useState(5);
@@ -31,9 +32,11 @@ const App = () => {
     SIMPLE: false,
     CONTEXT: false,
     CONTEXTV2: false,
-    CSP: false
+    CSP: false,
+    COMBINED: false,
   })
 
+  const [delayMillis, setDelayMillis] = useState<number>(100)
   const [useStepper, setUseStepper] = useState<boolean>(false);
   const [currentStepResolve, setCurrentStepResolve] = useState<() => void>();
 
@@ -75,7 +78,7 @@ const App = () => {
   }, [displayerId, playerId, useStepper])
 
   useEffect(() => {
-    setPlayer(getPlayerForId(playerId))
+    setPlayer(getPlayerForId(playerId, true, delayMillis))
   }, [playerId])
 
   const runMinesweeper = () => {
@@ -93,22 +96,32 @@ const App = () => {
 
   const benchmarkBot = async () => {
     setDisplayerId("BENCHMARK")
-    
-    const batchSize = 1000
+    const start = Date.now()
+    const batchSize = 100
 
     const playerIds = Object.entries(benchmarkPlayers).filter(([_, checked]) => checked).map(([k, _]) => k)
     console.log(playerIds)
     const boards = new Array(batchSize).fill("").map(() => getNewBoard(width, height, bombs))
 
     const resultPromises: Promise<BenchmarkResult>[] = boards.map(board => {
-      const gamePromises = playerIds.map(pid => 
-        minesweeper(copyBoard(board), noneDisplayer, getPlayerForId(pid, false, 0))
-          .then(gameState => ({ [pid]: gameState }))
+      const gamePromises = playerIds.map(pid => {
+        const timeLimitPromise = new Promise<{[playerId: string]: GameState}>((res) => setTimeout(() => {
+          console.info("Timed out waiting to complete game", pid, getStringFromBoard(board.grid))
+          res({ [pid]: "LOST" })
+        }, 600_000));
+
+        const gamePromise = minesweeper(board, noneDisplayer, getPlayerForId(pid, false, 0))
+          .then(gameState => {
+            // console.info(`[App] Finished game execution in ${(Date.now() - start) / 1000} s`, getStringFromBoard(board.grid))
+            return { [pid]: gameState }
+          })
           .catch(e => {
             console.error(`Caught error while evaluating ${pid} for board ${getBoardString(board)}`, e)
             throw e
           })
-      )
+
+        return Promise.race([timeLimitPromise, gamePromise])
+      })
       const ans: Promise<BenchmarkResult> = Promise.all(gamePromises)
         .then((gameStates) => {
           return {
@@ -120,7 +133,10 @@ const App = () => {
     })
     
     Promise.all(resultPromises)
-      .then(results => setBenchmarkResults(results))
+      .then(results => {
+        console.log(`Execution took ${(Date.now() - start) / 1000} s for ${batchSize} games`)
+        setBenchmarkResults(results)
+      })
       .catch(e => console.error("Caught error while finishing benchmarking", e))
   }
 
@@ -138,6 +154,8 @@ const App = () => {
         return contextAwarePlayerV2(showHighlights, delayMs)
       case "CSP":
         return cspPlayer(showHighlights, delayMs)
+      case "COMBINED":
+        return combinedPlayer(showHighlights, delayMs)
     }
     return naivePlayer;
   }
@@ -151,7 +169,7 @@ const App = () => {
       case "EDITOR":
         return 0;
     }
-    return 500;
+    return 0;
   }
 
   const onUserMove = (): Promise<Move> => {
@@ -258,13 +276,22 @@ const App = () => {
               <MenuItem value={"CONTEXT"}>Context Aware</MenuItem>
               <MenuItem value={"CONTEXTV2"}>Context Aware V2</MenuItem>
               <MenuItem value={"CSP"}>CSP</MenuItem>
+              <MenuItem value={"COMBINED"}>Combined</MenuItem>
             </Select>
-            <div>
+            <div style={{ paddingTop: "10px"}}>
               <label>Use Stepper?</label>
               <Checkbox
                 checked={useStepper}
                 onChange={({ target }) => setUseStepper(target.checked)}
               />
+              {!useStepper && (
+                <TextField 
+                  label="DelayMs"
+                  type="number"
+                  value={delayMillis}
+                  onChange={({ target }) => setDelayMillis(parseInt(target.value ?? 0))}              
+                />
+              )}
             </div>
             <div>
               <label>Show Board String?</label>
@@ -320,6 +347,14 @@ const App = () => {
                     checked={benchmarkPlayers.CSP} 
                     onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)} 
                     name="CSP"
+                  />}
+                />
+                <FormControlLabel
+                  label="Combined"
+                  control={<Checkbox 
+                    checked={benchmarkPlayers.COMBINED} 
+                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)} 
+                    name="COMBINED"
                   />}
                 />
               </FormGroup>
