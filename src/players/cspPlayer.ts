@@ -235,7 +235,10 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
         return results
     }
 
-    const generateCoordinateProbabilities = (moveGraph: MoveGraph, grid: Space[][]): { [coord: string]: number } => {
+    // Takes a MoveGraph and the entire grid returns:
+    // [0]: A map from a coordinate on the move edge to it's probability of being a bomb
+    // [1]: The average number of bombs in the move graph
+    const generateCoordinateProbabilities = (moveGraph: MoveGraph, grid: Space[][]): [{ [coord: string]: number }, number] => {
         const allValidConfigurations = reduceRecur(moveGraph, grid)
         // console.log("All valid configurations", allValidConfigurations)
         const coordinateBombProbability = Object.fromEntries(Object.entries(moveGraph)
@@ -247,8 +250,12 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
                 return [coord, configsAsBomb / allValidConfigurations.length]
             })
         )
+        const totalNumberOfBombsInAllConfigurations = allValidConfigurations.reduce((acc, cur) => {
+            const configBombs = Object.values(cur).filter(isBomb => isBomb).length
+            return acc + configBombs
+        }, 0)
         // console.log("Coordinate Probabilities", coordinateBombProbability)
-        return coordinateBombProbability
+        return [coordinateBombProbability, totalNumberOfBombsInAllConfigurations / allValidConfigurations.length]
     }
 
     // Create the graph with all moves on the edge
@@ -343,55 +350,72 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
         return result;
     }
 
-    const findMove = (movesOnEdge: Set<Space>, grid: Space[][]): Move => {
+    const findMove = (movesOnEdge: Set<Space>, grid: Space[][], movesOffEdge: Set<Space>, unknownBombs: number): Move => {
         // Construct graph of moves on edge
         const moveGraph = makeGraph(movesOnEdge, grid)
         // console.log("Full Graph", moveGraph)
 
         let maybeMove = findEasyMoves(moveGraph)
+        if (maybeMove != null) {
+            return maybeMove
+        }
         
         // Reduce using backtracking
 
-        let bestGuessOnEdge: [string, number] = ["", 2]
-        if (maybeMove == null) {
-            const subGraphs = splitGraph(moveGraph)
-            for (let subGraph of subGraphs) { 
-                const coordinateProbabilities = generateCoordinateProbabilities(subGraph, grid)
-                
-                const coordinateBombProbabilityList = Object.entries(coordinateProbabilities)
-                const definitelyFlag = coordinateBombProbabilityList.find(([_, prob]) => prob == 1)
-                if (definitelyFlag != undefined) {
-                    return {
-                        "coord": stringToCoord(definitelyFlag[0]),
-                        "action": "FLAG"
-                    }
+        var averageTotalBombs = 0
+        let bestGuessOnEdge: [string, number] = ["???", 2]
+        const subGraphs = splitGraph(moveGraph)
+        for (let subGraph of subGraphs) { 
+            const [coordinateProbabilities, numBombs] = generateCoordinateProbabilities(subGraph, grid)
+            averageTotalBombs += numBombs
+            
+            const coordinateBombProbabilityList = Object.entries(coordinateProbabilities)
+            const definitelyFlag = coordinateBombProbabilityList.find(([_, prob]) => prob == 1)
+            if (definitelyFlag != undefined) {
+                return {
+                    "coord": stringToCoord(definitelyFlag[0]),
+                    "action": "FLAG"
                 }
+            }
 
-                const leastLikelyBomb = coordinateBombProbabilityList.reduce((acc: [string, number], cur) => {
-                    if (cur[1] < acc[1]) {
-                        return cur
-                    } else {
-                        return acc
-                    }
-                }, ["", 2])
-                console.log(`Coord ${leastLikelyBomb[0]} is best with probability of bomb ${leastLikelyBomb[1] * 100}%`)
-                if (leastLikelyBomb[1] == 0) {
-                    return {
-                        "coord": stringToCoord(leastLikelyBomb[0]),
-                        "action": "POP"
-                    }
+            const leastLikelyBomb = coordinateBombProbabilityList.reduce((acc: [string, number], cur) => {
+                if (cur[1] < acc[1]) {
+                    return cur
+                } else {
+                    return acc
                 }
+            }, ["", 2])
+            if (leastLikelyBomb[1] == 0) {
+                return {
+                    "coord": stringToCoord(leastLikelyBomb[0]),
+                    "action": "POP"
+                }
+            }
 
-                if (leastLikelyBomb[1] < bestGuessOnEdge[1]) {
-                    bestGuessOnEdge = leastLikelyBomb
-                }
+            if (leastLikelyBomb[1] < bestGuessOnEdge[1]) {
+                bestGuessOnEdge = leastLikelyBomb
             }
         }
 
-        // TODO: check if it's better to guess somewhere off the edge
+        // Check if it's better to guess somewhere off the edge
+        let bestGuessOffEdge: [string, number] = ["???", 2]
+        if (movesOffEdge.size > 0) {
+            const offEdgeBombProb = (unknownBombs - averageTotalBombs) / movesOffEdge.size
+            bestGuessOffEdge = [coordToString(movesOffEdge.values().next().value), offEdgeBombProb]
+        }
 
-        return maybeMove ?? {
-            coord: bestGuessOnEdge[0] != "" ? stringToCoord(bestGuessOnEdge[0]) : movesOnEdge.values().next().value,
+        // console.log(`Coord ${bestGuessOnEdge[0]} is best ON edge with probability of bomb ${bestGuessOnEdge[1] * 100}%`)
+        // console.log(`Coord ${bestGuessOffEdge[0]} is best OFF edge with probability of bomb ${bestGuessOffEdge[1] * 100}%`)
+
+        let bestGuess = ""
+        if (bestGuessOffEdge[1] < bestGuessOnEdge[1]) {
+            bestGuess = bestGuessOffEdge[0]
+        } else {
+            bestGuess = bestGuessOnEdge[0]
+        }
+        
+        return {
+            coord: stringToCoord(bestGuess),
             action: "POP"
         }
     }
@@ -426,11 +450,7 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
                 }
             })
 
-
-            let nextMove: Move = movesOnEdge.size > 0 
-                ? findMove(movesOnEdge, board.grid)
-                : { coord: potentialMoves[0], action: "POP" }
-
+            let nextMove: Move = findMove(movesOnEdge, board.grid, movesOffEdge, unknownBombs)
 
             if (setHighlights) {
                 board.grid.forEach(row => row.forEach(space => space.highlightColor = "#F22"))
