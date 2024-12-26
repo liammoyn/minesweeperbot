@@ -1,4 +1,5 @@
 import { getBoardString } from "../displayers/consoleDisplayer";
+import { getStringFromBoard } from "../minesweeper/boardStringInterpretor";
 import { Board, Move, Player, Space, Coord } from "../minesweeper/types";
 import { getAdjacentTs, getCrossSection, isNeighborS } from "../utils/gridUtils";
 import { coordToString, isSame, spaceToCoord, stringToCoord } from "../utils/spaceUtils";
@@ -81,12 +82,21 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
 
         let newGraph: MoveGraph = { ...moveGraph }
         delete newGraph[coord]
+        if (Object.entries(newGraph).length == 0) {
+            return {
+                "newGraph": newGraph,
+                "newConfiguration": configuration
+            }
+        }
         const thisCountToConstraints = moveGraph[coord]
-        if (thisCountToConstraints == null) { return null }
+        if (thisCountToConstraints == null) { 
+            return {
+                "newGraph": newGraph,
+                "newConfiguration": configuration
+            }
+        }
 
-        // console.log("In Reduce Graph", isBomb, coord, moveGraph)
-        const newGrid = getNewGrid(grid, coord, isBomb)
-        // console.log(getBoardString({ grid: newGrid, gameState: "IN_PROGRESS" }))
+        let newGrid = getNewGrid(grid, coord, isBomb)
         if (isBomb) {
             // Every 1-count constraint coord is not a bomb
             // Every constraint that uses this coord should remove this coord and be reduced by 1
@@ -117,15 +127,14 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
                 newGraph[effectedCoord] = newCountToConstraints
             }
             for (let notBombCoord of newNotBombs) {
-                // console.log(`Checking not bomb ${notBombCoord} while trying ${coord} ${isBomb} bomb`)
                 const res = reduceGraph(newGraph, notBombCoord, false, newGrid)
                 if (res == null) {
-                    console.log(`Could not process ${notBombCoord} as safe on`, newGraph)
                     return null
                 }
                 newGraph = res.newGraph
                 // TODO: Maybe throw error if new configuration conflicts with old configuration?
                 configuration = { ...configuration, ...res.newConfiguration }
+                newGrid = getNewGridFromConfig(newGrid, configuration)
             }
         } else {
             // Every N-Count constraint where constraint.length == N are all bombs
@@ -150,15 +159,14 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
                 newGraph[effectedCoord] = newCountToConstraints
             }
             for (let bombCoord of newBombs) {
-                // console.log(`Checking bomb ${bombCoord} while trying ${coord} ${isBomb} bomb`)
                 const res = reduceGraph(newGraph, bombCoord, true, newGrid)
                 if (res == null) {
-                    console.log(`Could not process ${bombCoord} as bomb on`, newGraph)
                     return null
                 }
                 newGraph = res.newGraph
                 // TODO: Maybe throw error if new configuration conflicts with old configuration?
                 configuration = { ...configuration, ...res.newConfiguration }
+                newGrid = getNewGridFromConfig(newGrid, configuration)
             }            
         }
 
@@ -182,6 +190,20 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
         }))
     }
 
+    const getNewGridFromConfig = (grid: Space[][], configuration: Configuration): Space[][] => {
+        return grid.map((r, ri) => r.map((s, ci) => {
+            if (configuration[coordToString({row: ri, col: ci})] != undefined) {
+                if (configuration[coordToString({row: ri, col: ci})]) {
+                    return { ...s, isFlagged: true }
+                } else {
+                    return { ...s, isOpen: true }
+                }
+            } else {
+                return s
+            }
+        }))
+    }
+
     const reduceRecur = (moveGraph: MoveGraph, grid: Space[][]): Configuration[] => {
         const coords = Object.keys(moveGraph).sort() // TODO: This is probably too ineffcient
         if (coords.length == 0) {
@@ -192,8 +214,6 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
 
         const results = []
 
-        // console.log("In reduce recur", moveGraph, thisCoord)
-        // console.log(getBoardString({ grid: grid, gameState: "IN_PROGRESS" }))
         // Assume thisCoord == bomb
         const bombReduceAttempt = reduceGraph(moveGraph, thisCoord, true, grid)
         if (bombReduceAttempt != null) {
@@ -202,18 +222,18 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
             if (Object.keys(bombGraph).length == 0) {
                 results.push(bombConfiguration)
             } else {
-                reduceRecur(bombGraph, grid).map(partialConfig => {
+                const newGrid = getNewGridFromConfig(grid, bombConfiguration)
+                reduceRecur(bombGraph, newGrid).map(partialConfig => {
                     return { ...bombConfiguration, ...partialConfig }
                 }).forEach(completeConfig => {
                     results.push(completeConfig)
                 })
             }
         } else {
-            console.log("Attempt to reduce was invalid", moveGraph, thisCoord, true)
+            // console.log("Attempt to reduce was invalid", thisCoord, true, moveGraph)
         }
 
         // Assume thisCoord != bomb
-        // console.log("Attempt not is bomb", thisCoord, moveGraph)
         const notBombReduceAttempt = reduceGraph(moveGraph, thisCoord, false, grid)
         if (notBombReduceAttempt != null) {
             const {newGraph: notBombGraph, newConfiguration: notBombConfiguration} = notBombReduceAttempt
@@ -221,14 +241,15 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
             if (Object.keys(notBombGraph).length == 0) {
                 results.push(notBombConfiguration)
             } else {
-                reduceRecur(notBombGraph, grid).map(partialConfig => {
+                const newGrid = getNewGridFromConfig(grid, notBombConfiguration)
+                reduceRecur(notBombGraph, newGrid).map(partialConfig => {
                     return { ...notBombConfiguration, ...partialConfig }
                 }).forEach(completeConfig => {
                     results.push(completeConfig)
                 })
             }
         } else {
-            console.log("Attempt to reduce was invalid", moveGraph, thisCoord, true)
+            // console.log("Attempt to reduce was invalid", thisCoord, false, moveGraph)
         }
 
         // Combine results when thisCoord == bomb and thisCoord != bomb
@@ -240,7 +261,9 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
     // [1]: The average number of bombs in the move graph
     const generateCoordinateProbabilities = (moveGraph: MoveGraph, grid: Space[][]): [{ [coord: string]: number }, number] => {
         const allValidConfigurations = reduceRecur(moveGraph, grid)
-        // console.log("All valid configurations", allValidConfigurations)
+        if (allValidConfigurations.length == 0) {
+            console.warn("Cant find any valid configurations!", moveGraph, grid)
+        }
         const coordinateBombProbability = Object.fromEntries(Object.entries(moveGraph)
             .map(([coord, _]) => {
                 const configsAsBomb = allValidConfigurations.reduce((total: number, curConfig: Configuration) => {
@@ -254,7 +277,6 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
             const configBombs = Object.values(cur).filter(isBomb => isBomb).length
             return acc + configBombs
         }, 0)
-        // console.log("Coordinate Probabilities", coordinateBombProbability)
         return [coordinateBombProbability, totalNumberOfBombsInAllConfigurations / allValidConfigurations.length]
     }
 
@@ -353,7 +375,6 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
     const findMove = (movesOnEdge: Set<Space>, grid: Space[][], movesOffEdge: Set<Space>, unknownBombs: number): Move => {
         // Construct graph of moves on edge
         const moveGraph = makeGraph(movesOnEdge, grid)
-        // console.log("Full Graph", moveGraph)
 
         let maybeMove = findEasyMoves(moveGraph)
         if (maybeMove != null) {
@@ -408,12 +429,16 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
         // console.log(`Coord ${bestGuessOffEdge[0]} is best OFF edge with probability of bomb ${bestGuessOffEdge[1] * 100}%`)
 
         let bestGuess = ""
-        if (bestGuessOffEdge[1] < bestGuessOnEdge[1]) {
-            bestGuess = bestGuessOffEdge[0]
-        } else {
+        if (bestGuessOnEdge[1] < bestGuessOffEdge[1]) {
             bestGuess = bestGuessOnEdge[0]
+        } else {
+            bestGuess = bestGuessOffEdge[0]
         }
         
+        if (!bestGuess.includes("#")) {
+            console.error(getStringFromBoard(grid))
+            throw Error("Couldnt find a move!")
+        }
         return {
             coord: stringToCoord(bestGuess),
             action: "POP"

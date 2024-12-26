@@ -41,7 +41,6 @@ const contextAwarePlayerV2 = (setHighlights: boolean, delayMs: number): Player =
             const flaggedNeighbors = nonEmptyNeighbors.filter(s => s.isFlagged)
             nextMove = tryToFindMoveForSpace(space, candidateNeighbors, flaggedNeighbors.length)
             if (nextMove != null) {
-                // console.log("Found normally through:", space)
                 return nextMove;
             }
 
@@ -96,9 +95,6 @@ const contextAwarePlayerV2 = (setHighlights: boolean, delayMs: number): Player =
                 }
                 permutations.push(...newPermutations)
             }
-            // console.log("this space", space)
-            // console.log("useful numbers", usefulNumbers)
-            // console.log("permutations", permutations)
 
             for (let permutation of permutations) {
                 if (permutation.length == 1) { continue; }
@@ -146,7 +142,6 @@ const contextAwarePlayerV2 = (setHighlights: boolean, delayMs: number): Player =
             
             let nextMove = tryToFindMoveForEdge(board, numbersOnEdge)
 
-            // console.log(nextMove !== null ? nextMove : "GUESSING ", findBestUncertainMove(potentialMoves))
             if (nextMove == null) {
                 nextMove = findBestUncertainMove(potentialMoves)
             }

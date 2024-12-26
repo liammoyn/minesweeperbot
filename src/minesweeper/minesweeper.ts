@@ -52,7 +52,7 @@ const makeMove = (board: Board, player: Player): Promise<Move> => {
 
 const applyMove = (board: Board, move: Move): Board | null => {
     if (move?.coord == null || !onGrid(board.grid, move.coord)) {
-        console.log(`Given coord not on grid ${move?.coord?.col}, ${move?.coord?.row}`)
+        console.error(`Given coord not on grid ${move?.coord?.col}, ${move?.coord?.row}`)
         return null;
     }
     const { row, col } = move.coord;
