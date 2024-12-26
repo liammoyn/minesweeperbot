@@ -1,4 +1,5 @@
 import { getAdjacentCoords, onGrid } from "../utils/gridUtils";
+import { getStringFromBoard } from "./boardStringInterpretor";
 import { Board, Player, Move, Coord, Displayer, GameState } from "./types";
 
 const minesweeper = async (initialBoard: Board, displayer: Displayer, player: Player): Promise<GameState> => {
@@ -6,7 +7,13 @@ const minesweeper = async (initialBoard: Board, displayer: Displayer, player: Pl
     player.newGame(board)
     
     while (["IN_PROGRESS", "NEW" ].includes(board.gameState)) {
-        const newBoard = await runMove(displayer, board, player);
+        let newBoard
+        try {
+            newBoard  = await runMove(displayer, board, player);
+        } catch (e) {
+            console.log("Threw exception with board", board, getStringFromBoard(board.grid))
+            throw e
+        }
         
         if (newBoard === null || newBoard.gameState === "LOST") {
             if (newBoard !== null) { 

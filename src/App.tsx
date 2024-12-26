@@ -89,7 +89,7 @@ const App = () => {
     if (playerId === "USER") { throw Error("Cannot benchmark the user player") }
     setDisplayerId("BENCHMARK")
     
-    const batchSize = 5000
+    const batchSize = 1000
 
     let getBatchPromise = () => new Promise<number>(res => {
       const games: Promise<GameState>[] = new Array(batchSize)
