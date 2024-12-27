@@ -22,13 +22,11 @@ const minesweeper = async (initialBoard: Board, displayer: Displayer, player: Pl
             } else {
                 console.log("null board")
             }
-            console.log(`[Los] Finished game execution in ${(Date.now() - start) / 1000} s`, getStringFromBoard(initialBoard.grid))
             return "LOST"
         }
         board = newBoard
     }
     displayBoard(displayer, board)
-    console.log(`[Win] Finished game execution in ${(Date.now() - start) / 1000} s`, getStringFromBoard(initialBoard.grid))
     return board.gameState
 }
 

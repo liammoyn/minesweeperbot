@@ -77,10 +77,10 @@ const contextAwarePlayerV2 = (setHighlights: boolean, delayMs: number): Player =
 
             // For each permutation of usefulNumbers who's candidate numbers are distinct, attempt to reprocess
             // this space's candidates that aren't shared with any number in the permutation
-            // TODO: This is slow
             const noSharedCandidates = (s1: Space, s2: Space) => {
                 const c1s = spaceToCandidates.get(s1)!!
                 const c2s = spaceToCandidates.get(s2)!!
+                // Use set instead?
                 return c1s.every(c1 => c2s.every(c2 => !isSame(c1, c2)))
             }
             const permutations: Space[][] = []

@@ -142,7 +142,7 @@ const combinedPlayer = (setHighlights: boolean, delayMs: number): Player => {
             let maybeNextMove = tryToFindMoveForEdge(board, numbersOnEdge)
             let nextMovePromise: Promise<Move>
             if (maybeNextMove == null) {
-                console.warn("Using CSP player")
+                // console.warn("Using CSP player")
                 nextMovePromise = cspPlayerInst.pickCell(board)
             } else {
                 nextMovePromise = Promise.resolve(maybeNextMove!!)

@@ -48,6 +48,7 @@ const App = () => {
 
   const [currentMoveResolve, setCurrentMoveResolve] = useState<(m: Move) => void>();
 
+  const [benchmarkGames, setBenchmarkGames] = useState<number>(1000);
   const [benchmarkResults, setBenchmarkResults] = useState<BenchmarkResults>([]);
 
   const [board, setBoard] = useState<Board | null>(null);
@@ -97,7 +98,7 @@ const App = () => {
   const benchmarkBot = async () => {
     setDisplayerId("BENCHMARK")
     const start = Date.now()
-    const batchSize = 100
+    const batchSize = benchmarkGames
 
     const playerIds = Object.entries(benchmarkPlayers).filter(([_, checked]) => checked).map(([k, _]) => k)
     console.log(playerIds)
@@ -236,19 +237,19 @@ const App = () => {
                 label="Height"
                 type="number"
                 value={height}
-                onChange={({ target }) => setHeight(parseInt(target.value))}
+                onChange={({ target }) => setHeight(parseInt(target.value ?? 0))}
               />
               <TextField
                 label="Width"
                 type="number"
                 value={width}
-                onChange={({ target }) => setWidth(parseInt(target.value))}
+                onChange={({ target }) => setWidth(parseInt(target.value ?? 0))}
               />
               <TextField
                 label="Bombs"
                 type="number"
                 value={bombs}
-                onChange={({ target }) => setBombs(parseInt(target.value))}
+                onChange={({ target }) => setBombs(parseInt(target.value ?? 0))}
               />
             </div>
           )}
@@ -363,6 +364,12 @@ const App = () => {
               Benchmark Bot
             </Button>
             <div>
+              <TextField 
+                label="Benchmark Games"
+                type="number"
+                value={benchmarkGames}
+                onChange={({ target }) => setBenchmarkGames(parseInt(target.value ?? 0))}              
+              />
               <BenchmarkDisplayerComp
                 benchmarkResults={benchmarkResults}
               />

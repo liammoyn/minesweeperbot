@@ -205,7 +205,7 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
     }
 
     const reduceRecur = (moveGraph: MoveGraph, grid: Space[][]): Configuration[] => {
-        const coords = Object.keys(moveGraph).sort() // TODO: This is probably too ineffcient
+        const coords = Object.keys(moveGraph).sort()
         if (coords.length == 0) {
             return []
         }
@@ -263,6 +263,7 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
         const allValidConfigurations = reduceRecur(moveGraph, grid)
         if (allValidConfigurations.length == 0) {
             console.warn("Cant find any valid configurations!", moveGraph, grid)
+            throw Error("Cant find any valid configurations!")
         }
         const coordinateBombProbability = Object.fromEntries(Object.entries(moveGraph)
             .map(([coord, _]) => {
@@ -386,7 +387,7 @@ const cspPlayer = (setHighlights: boolean, delayMs: number): Player => {
         var averageTotalBombs = 0
         let bestGuessOnEdge: [string, number] = ["???", 2]
         const subGraphs = splitGraph(moveGraph)
-        for (let subGraph of subGraphs) { 
+        for (let subGraph of subGraphs) {
             const [coordinateProbabilities, numBombs] = generateCoordinateProbabilities(subGraph, grid)
             averageTotalBombs += numBombs
             

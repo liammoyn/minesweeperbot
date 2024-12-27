@@ -30,10 +30,6 @@ export const BenchmarkDisplayerComp = ({ benchmarkResults }: BenchmarkDisplayerC
 
     return (
         <div>
-            <div>
-                <label>Games Played:</label>
-                <div>{totalGames}</div>
-            </div>
             <div style={{ display: "flex", flexFlow: "row", alignItems: "top", justifyContent: "center" }}>
                 {
                     Object.entries(playerToWins).map(([pid, wins]) => (
