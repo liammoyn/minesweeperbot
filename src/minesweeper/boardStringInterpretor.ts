@@ -19,7 +19,9 @@ const factor = (num: number): number[] => {
 const getGridFromString = (input: String): Space[][] => {
     const factors: number[] = factor(input.length)
     let width: number
-    if (factors.length % 2 === 0) {
+    if (input.length == 16 * 30) {
+        width = 30
+    } else if (factors.length % 2 === 0) {
         width = factors[factors.length / 2]
     } else {
         width = factors[Math.floor(factors.length / 2)]

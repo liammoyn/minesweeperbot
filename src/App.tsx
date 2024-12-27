@@ -25,8 +25,8 @@ const App = () => {
   const [bombs, setBombs] = useState(5);
   const [displayerId, setDisplayerId] = useState("REACT");
   const [displayer, setDisplayer] = useState<Displayer>(consoleDisplayer);
-  const [playerId, setPlayerId] = useState("CONTEXTV2");
-  const [player, setPlayer] = useState<Player>(contextAwarePlayer(true, 1000));
+  const [playerId, setPlayerId] = useState("COMBINED");
+  const [player, setPlayer] = useState<Player>(combinedPlayer(true, 0));
   const [benchmarkPlayers, setBenchmarkPlayers] = useState({
     NAIVE: false,
     SIMPLE: false,
@@ -36,7 +36,7 @@ const App = () => {
     COMBINED: false,
   })
 
-  const [delayMillis, setDelayMillis] = useState<number>(100)
+  const [delayMillis, setDelayMillis] = useState<number>(0)
   const [useStepper, setUseStepper] = useState<boolean>(false);
   const [currentStepResolve, setCurrentStepResolve] = useState<() => void>();
 
