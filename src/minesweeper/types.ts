@@ -42,3 +42,10 @@ export interface BenchmarkResult {
 }
 
 export type BenchmarkResults = BenchmarkResult[]
+
+export interface BoardConfiguration {
+    height: number,
+    width: number,
+    bombs: number,
+    gridString?: string,
+}

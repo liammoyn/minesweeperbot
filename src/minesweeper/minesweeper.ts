@@ -6,7 +6,6 @@ import { Board, Player, Move, Coord, Displayer, GameState } from "./types";
 const minesweeper = async (initialBoard: Board, displayer: Displayer, player: Player): Promise<GameState> => {
     let board = copyBoard(initialBoard);
     player.newGame(board)
-    const start = Date.now()
     while (["IN_PROGRESS", "NEW" ].includes(board.gameState)) {
         let newBoard
         try {

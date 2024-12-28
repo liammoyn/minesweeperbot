@@ -1,28 +1,46 @@
 import { useEffect, useState } from 'react';
-import consoleDisplayer, { getBoardString } from "./displayers/consoleDisplayer" 
-import naivePlayer from "./players/naivePlayer" 
+import consoleDisplayer, { getBoardString } from "./displayers/consoleDisplayer"
+import naivePlayer from "./players/naivePlayer"
 import reactDisplayer, { ReactDisplayerComp } from "./displayers/reactDisplayer"
 import noneDisplayer from "./displayers/noneDisplayer"
 import minesweeper from './minesweeper/minesweeper';
 import { getNewBoard } from './minesweeper/boardGenerator';
-import { Button, Checkbox, FormControl, FormControlLabel, FormGroup, MenuItem, Select, TextField } from '@mui/material';
-import { Board, Displayer, Player, Move, GameState, Space, BenchmarkResults, BenchmarkResult } from './minesweeper/types';
+import { Button, Checkbox, Drawer, FormControl, FormControlLabel, FormGroup, List, ListItem, ListItemButton, ListItemText, MenuItem, Select, TextField } from '@mui/material';
+import { Board, Displayer, Player, Move, GameState, Space, BenchmarkResults, BenchmarkResult, BoardConfiguration } from './minesweeper/types';
 import userPlayer from './players/userPlayer';
 import simplePlayer from './players/simplePlayer';
 import { getBoardFromString, getStringFromBoard } from './minesweeper/boardStringInterpretor';
 import contextAwarePlayer from './players/contextAwarePlayer';
 import contextAwarePlayerV2 from './players/contextAwarePlayerV2';
-import benchmarkDisplayer, { BenchmarkDisplayerComp } from './displayers/benchmarkDisplayer';
+import benchmarkDisplayer from './displayers/benchmarkDisplayer';
 import { spaceToCoord } from './utils/spaceUtils';
 import editorDisplayer, { EditorDisplayerComp } from './displayers/editorDisplayer';
 import './App.css';
 import cspPlayer from './players/cspPlayer';
 import combinedPlayer from './players/combinedPlayer';
+import BotViewer from './pages/BotViewer';
+import UserPlay from './pages/UserPlay';
+import Benchmark from './pages/Benchmark';
+import Editor from './pages/Editor';
+import BenchmarkComp from './components/BenchmarkComp';
+import BoardSelector from './components/BoardSelector';
+
+enum Page {
+  "BENCHMARK",
+  "BOTVIEWER",
+  "USERPLAY",
+  "EDITOR"
+}
 
 const App = () => {
-  const [height, setHeight] = useState(5);
-  const [width, setWidth] = useState(5);
-  const [bombs, setBombs] = useState(5);
+  const [currentPage, setCurrentPage] = useState<Page>(Page.BOTVIEWER)
+
+  const [boardConfig, setBoardConfig] = useState<BoardConfiguration>({
+    height: 5,
+    width: 5,
+    bombs: 5
+  })
+
   const [displayerId, setDisplayerId] = useState("REACT");
   const [displayer, setDisplayer] = useState<Displayer>(consoleDisplayer);
   const [playerId, setPlayerId] = useState("COMBINED");
@@ -40,8 +58,6 @@ const App = () => {
   const [useStepper, setUseStepper] = useState<boolean>(false);
   const [currentStepResolve, setCurrentStepResolve] = useState<() => void>();
 
-  const [useCustomBoard, setUseCustomBoard] = useState<boolean>(false);
-  const [customBoardString, setCustomBoardString] = useState<string>("");
 
   const [showBoardString, setShowBoardString] = useState<boolean>(false);
   const [currentBoardString, setCurrentBoardString] = useState<string>("");
@@ -84,13 +100,13 @@ const App = () => {
 
   const runMinesweeper = () => {
     let newBoard: Board
-    if (displayerId === "EDITOR" && (board?.gameState === "NEW" || board?.gameState === "IN_PROGRESS")) {
-      newBoard = board!!
-    } else if (useCustomBoard) {
-      newBoard = getBoardFromString(customBoardString)
+    // if (displayerId === "EDITOR" && (board?.gameState === "NEW" || board?.gameState === "IN_PROGRESS")) {
+    //   newBoard = board!!
+    // } else if (useCustomBoard) {
+    if (boardConfig?.gridString != null) {
+      newBoard = getBoardFromString(boardConfig.gridString)
     } else {
-      console.log(`Running with ${width} ${height} ${bombs}`)
-      newBoard = getNewBoard(width, height, bombs)
+      newBoard = getNewBoard(boardConfig.width, boardConfig.height, boardConfig.bombs)
     }
     minesweeper(newBoard, displayer, player);
   }
@@ -101,12 +117,11 @@ const App = () => {
     const batchSize = benchmarkGames
 
     const playerIds = Object.entries(benchmarkPlayers).filter(([_, checked]) => checked).map(([k, _]) => k)
-    console.log(playerIds)
-    const boards = new Array(batchSize).fill("").map(() => getNewBoard(width, height, bombs))
+    const boards = new Array(batchSize).fill("").map(() => getNewBoard(boardConfig.width, boardConfig.height, boardConfig.bombs))
 
     const resultPromises: Promise<BenchmarkResult>[] = boards.map(board => {
       const gamePromises = playerIds.map(pid => {
-        const timeLimitPromise = new Promise<{[playerId: string]: GameState}>((res) => setTimeout(() => {
+        const timeLimitPromise = new Promise<{ [playerId: string]: GameState }>((res) => setTimeout(() => {
           console.info("Timed out waiting to complete game", pid, getStringFromBoard(board.grid))
           res({ [pid]: "LOST" })
         }, 600_000));
@@ -132,7 +147,7 @@ const App = () => {
         })
       return ans
     })
-    
+
     Promise.all(resultPromises)
       .then(results => {
         console.log(`Execution took ${(Date.now() - start) / 1000} s for ${batchSize} games`)
@@ -203,57 +218,60 @@ const App = () => {
     })
   }
 
-  const onBenchmarkPlayersChange = (playerId: string, playerOn: boolean) => {
+  const onBenchmarkPlayersChange = (playerId: string, isPlayerOn: boolean) => {
     setBenchmarkPlayers({
       ...benchmarkPlayers,
-      [playerId]: playerOn
-  })
+      [playerId]: isPlayerOn
+    })
+  }
+
+  const getPage = (currentPage: Page) => {
+    if (currentPage == Page.BOTVIEWER) {
+      return (<BotViewer />)
+    } else if (currentPage == Page.USERPLAY) {
+      return (<UserPlay />)
+    } else if (currentPage == Page.BENCHMARK) {
+      return (<Benchmark />)
+    } else if (currentPage == Page.EDITOR) {
+      return (<Editor />)
+    }
   }
 
   return (
     <div className="App" style={{ paddingTop: "50px" }}>
+      {/* <Drawer open={true} onClose={() => false}>
+        <List>
+          <ListItem>
+            <ListItemButton onClick={() => setCurrentPage(Page.BOTVIEWER)}>
+              <ListItemText primary={"Bot Viewer"} />
+            </ListItemButton>
+          </ListItem>
+          <ListItem>
+            <ListItemButton onClick={() => setCurrentPage(Page.USERPLAY)}>
+              <ListItemText primary={"User Play"} />
+            </ListItemButton>
+          </ListItem>
+          <ListItem>
+            <ListItemButton onClick={() => setCurrentPage(Page.BENCHMARK)}>
+              <ListItemText primary={"Benchmark"} />
+            </ListItemButton>
+          </ListItem>
+          <ListItem>
+            <ListItemButton onClick={() => setCurrentPage(Page.EDITOR)}>
+              <ListItemText primary={"Editor"} />
+            </ListItemButton>
+          </ListItem>
+        </List>
+      </Drawer> */}
       <div>
-        <div style={{ paddingBottom: "5px" }}>
-          <div>
-            <label>Use Custom Board?</label>
-            <Checkbox
-              checked={useCustomBoard}
-              onChange={({ target }) => setUseCustomBoard(target.checked)}
-            />
-          </div>
-          {useCustomBoard ? (
-            <div>
-              <TextField
-                label="Board String"
-                type="string"
-                value={customBoardString}
-                onChange={({ target }) => setCustomBoardString(target.value as unknown as string)}
-                onKeyDown={(e) => e.keyCode === 13 && setBoard(getBoardFromString(customBoardString)) }
-              />
-            </div>
-          ) : (
-            <div>
-              <TextField
-                label="Height"
-                type="number"
-                value={height}
-                onChange={({ target }) => setHeight(parseInt(target.value ?? 0))}
-              />
-              <TextField
-                label="Width"
-                type="number"
-                value={width}
-                onChange={({ target }) => setWidth(parseInt(target.value ?? 0))}
-              />
-              <TextField
-                label="Bombs"
-                type="number"
-                value={bombs}
-                onChange={({ target }) => setBombs(parseInt(target.value ?? 0))}
-              />
-            </div>
-          )}
-        </div>
+        {getPage(currentPage)}
+      </div>
+      <div>
+        <BoardSelector
+          boardConfig={boardConfig}
+          onBoardConfigChange={bc => setBoardConfig(bc)}
+        />
+
         <Select
           label="Displayer"
           value={displayerId}
@@ -279,18 +297,18 @@ const App = () => {
               <MenuItem value={"CSP"}>CSP</MenuItem>
               <MenuItem value={"COMBINED"}>Combined</MenuItem>
             </Select>
-            <div style={{ paddingTop: "10px"}}>
+            <div style={{ paddingTop: "10px" }}>
               <label>Use Stepper?</label>
               <Checkbox
                 checked={useStepper}
                 onChange={({ target }) => setUseStepper(target.checked)}
               />
               {!useStepper && (
-                <TextField 
+                <TextField
                   label="DelayMs"
                   type="number"
                   value={delayMillis}
-                  onChange={({ target }) => setDelayMillis(parseInt(target.value ?? 0))}              
+                  onChange={({ target }) => setDelayMillis(parseInt(target.value ?? 0))}
                 />
               )}
             </div>
@@ -312,49 +330,49 @@ const App = () => {
               <FormGroup>
                 <FormControlLabel
                   label="Naive"
-                  control={<Checkbox 
-                    checked={benchmarkPlayers.NAIVE} 
-                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)} 
+                  control={<Checkbox
+                    checked={benchmarkPlayers.NAIVE}
+                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)}
                     name="NAIVE"
                   />}
                 />
                 <FormControlLabel
                   label="Simple"
-                  control={<Checkbox 
-                    checked={benchmarkPlayers.SIMPLE} 
-                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)} 
+                  control={<Checkbox
+                    checked={benchmarkPlayers.SIMPLE}
+                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)}
                     name="SIMPLE"
                   />}
                 />
                 <FormControlLabel
                   label="Context"
-                  control={<Checkbox 
-                    checked={benchmarkPlayers.CONTEXT} 
-                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)} 
+                  control={<Checkbox
+                    checked={benchmarkPlayers.CONTEXT}
+                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)}
                     name="CONTEXT"
                   />}
                 />
                 <FormControlLabel
                   label="ContextV2"
-                  control={<Checkbox 
-                    checked={benchmarkPlayers.CONTEXTV2} 
-                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)} 
+                  control={<Checkbox
+                    checked={benchmarkPlayers.CONTEXTV2}
+                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)}
                     name="CONTEXTV2"
                   />}
                 />
                 <FormControlLabel
                   label="CSP"
-                  control={<Checkbox 
-                    checked={benchmarkPlayers.CSP} 
-                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)} 
+                  control={<Checkbox
+                    checked={benchmarkPlayers.CSP}
+                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)}
                     name="CSP"
                   />}
                 />
                 <FormControlLabel
                   label="Combined"
-                  control={<Checkbox 
-                    checked={benchmarkPlayers.COMBINED} 
-                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)} 
+                  control={<Checkbox
+                    checked={benchmarkPlayers.COMBINED}
+                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)}
                     name="COMBINED"
                   />}
                 />
@@ -364,13 +382,13 @@ const App = () => {
               Benchmark Bot
             </Button>
             <div>
-              <TextField 
+              <TextField
                 label="Benchmark Games"
                 type="number"
                 value={benchmarkGames}
-                onChange={({ target }) => setBenchmarkGames(parseInt(target.value ?? 0))}              
+                onChange={({ target }) => setBenchmarkGames(parseInt(target.value ?? 0))}
               />
-              <BenchmarkDisplayerComp
+              <BenchmarkComp
                 benchmarkResults={benchmarkResults}
               />
             </div>
