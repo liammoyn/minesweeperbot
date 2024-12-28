@@ -24,6 +24,7 @@ import BenchmarkComp from './components/BenchmarkComp';
 import BoardSelector from './components/BoardSelector';
 import ReactBoard from './components/ReactBoard';
 import EditorOptions from './components/EditorOptions';
+import { getPlayerForId } from './utils/playerUtils';
 
 enum Page {
   "BENCHMARK",
@@ -34,6 +35,7 @@ enum Page {
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState<Page>(Page.BOTVIEWER)
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   const [boardConfig, setBoardConfig] = useState<BoardConfiguration>({
     height: 5,
@@ -45,14 +47,6 @@ const App = () => {
   const [displayer, setDisplayer] = useState<Displayer>(consoleDisplayer);
   const [playerId, setPlayerId] = useState("COMBINED");
   const [player, setPlayer] = useState<Player>(combinedPlayer(true, 0));
-  const [benchmarkPlayers, setBenchmarkPlayers] = useState({
-    NAIVE: false,
-    SIMPLE: false,
-    CONTEXT: false,
-    CONTEXTV2: false,
-    CSP: false,
-    COMBINED: false,
-  })
 
   const [delayMillis, setDelayMillis] = useState<number>(0)
   const [useStepper, setUseStepper] = useState<boolean>(false);
@@ -64,8 +58,6 @@ const App = () => {
 
   const [currentMoveResolve, setCurrentMoveResolve] = useState<(m: Move) => void>();
 
-  const [benchmarkGames, setBenchmarkGames] = useState<number>(1000);
-  const [benchmarkResults, setBenchmarkResults] = useState<BenchmarkResults>([]);
 
   const [board, setBoard] = useState<Board | null>(null);
 
@@ -95,7 +87,7 @@ const App = () => {
   }, [displayerId, playerId, useStepper])
 
   useEffect(() => {
-    setPlayer(getPlayerForId(playerId, true, delayMillis))
+    setPlayer(getPlayerForId(playerId, true, delayMillis, onUserMove))
   }, [playerId])
 
   const runMinesweeper = () => {
@@ -109,71 +101,6 @@ const App = () => {
       newBoard = getNewBoard(boardConfig.width, boardConfig.height, boardConfig.bombs)
     }
     minesweeper(newBoard, displayer, player);
-  }
-
-  const benchmarkBot = async () => {
-    setDisplayerId("BENCHMARK")
-    const start = Date.now()
-    const batchSize = benchmarkGames
-
-    const playerIds = Object.entries(benchmarkPlayers).filter(([_, checked]) => checked).map(([k, _]) => k)
-    const boards = new Array(batchSize).fill("").map(() => getNewBoard(boardConfig.width, boardConfig.height, boardConfig.bombs))
-
-    const resultPromises: Promise<BenchmarkResult>[] = boards.map(board => {
-      const gamePromises = playerIds.map(pid => {
-        const timeLimitPromise = new Promise<{ [playerId: string]: GameState }>((res) => setTimeout(() => {
-          console.info("Timed out waiting to complete game", pid, getStringFromBoard(board.grid))
-          res({ [pid]: "LOST" })
-        }, 600_000));
-
-        const gamePromise = minesweeper(board, noneDisplayer, getPlayerForId(pid, false, 0))
-          .then(gameState => {
-            // console.info(`[App] Finished game execution in ${(Date.now() - start) / 1000} s`, getStringFromBoard(board.grid))
-            return { [pid]: gameState }
-          })
-          .catch(e => {
-            console.error(`Caught error while evaluating ${pid} for board ${getBoardString(board)}`, e)
-            throw e
-          })
-
-        return Promise.race([timeLimitPromise, gamePromise])
-      })
-      const ans: Promise<BenchmarkResult> = Promise.all(gamePromises)
-        .then((gameStates) => {
-          return {
-            initialBoard: board,
-            results: gameStates.reduce((acc, cur) => ({ ...acc, ...cur }), {})
-          }
-        })
-      return ans
-    })
-
-    Promise.all(resultPromises)
-      .then(results => {
-        console.log(`Execution took ${(Date.now() - start) / 1000} s for ${batchSize} games`)
-        setBenchmarkResults(results)
-      })
-      .catch(e => console.error("Caught error while finishing benchmarking", e))
-  }
-
-  const getPlayerForId = (playerId: string, showHighlights: boolean = true, delayMs: number = 100): Player => {
-    switch (playerId) {
-      case "NAIVE":
-        return naivePlayer
-      case "USER":
-        return userPlayer(onUserMove)()
-      case "SIMPLE":
-        return simplePlayer(showHighlights, delayMs)
-      case "CONTEXT":
-        return contextAwarePlayer(showHighlights, delayMs)
-      case "CONTEXTV2":
-        return contextAwarePlayerV2(showHighlights, delayMs)
-      case "CSP":
-        return cspPlayer(showHighlights, delayMs)
-      case "COMBINED":
-        return combinedPlayer(showHighlights, delayMs)
-    }
-    return naivePlayer;
   }
 
   const getDisplayDelay = (playerId: string): number => {
@@ -218,12 +145,7 @@ const App = () => {
     })
   }
 
-  const onBenchmarkPlayersChange = (playerId: string, isPlayerOn: boolean) => {
-    setBenchmarkPlayers({
-      ...benchmarkPlayers,
-      [playerId]: isPlayerOn
-    })
-  }
+  
 
   const getPage = (currentPage: Page) => {
     if (currentPage == Page.BOTVIEWER) {
@@ -231,7 +153,10 @@ const App = () => {
     } else if (currentPage == Page.USERPLAY) {
       return (<UserPlay />)
     } else if (currentPage == Page.BENCHMARK) {
-      return (<Benchmark />)
+      setDisplayerId("BENCHMARK")
+      return (<Benchmark
+        boardConfig={boardConfig}
+      />)
     } else if (currentPage == Page.EDITOR) {
       return (<Editor />)
     }
@@ -239,7 +164,7 @@ const App = () => {
 
   return (
     <div className="App" style={{ paddingTop: "50px" }}>
-      {/* <Drawer open={true} onClose={() => false}>
+      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
         <List>
           <ListItem>
             <ListItemButton onClick={() => setCurrentPage(Page.BOTVIEWER)}>
@@ -262,7 +187,12 @@ const App = () => {
             </ListItemButton>
           </ListItem>
         </List>
-      </Drawer> */}
+      </Drawer>
+      <div>
+        <Button onClick={() => setDrawerOpen(true)}>
+          Open Drawer
+        </Button>
+      </div>
       <div>
         {getPage(currentPage)}
       </div>
@@ -279,7 +209,6 @@ const App = () => {
         >
           <MenuItem value={"CONSOLE"}>Console</MenuItem>
           <MenuItem value={"REACT"}>React</MenuItem>
-          <MenuItem value={"BENCHMARK"}>Benchmark</MenuItem>
           <MenuItem value={"EDITOR"}>Editor</MenuItem>
         </Select>
         {displayerId != "BENCHMARK" && (
@@ -322,76 +251,6 @@ const App = () => {
             <Button onClick={runMinesweeper} variant="outlined">
               Play Minesweeper
             </Button>
-          </>
-        )}
-        {displayerId == "BENCHMARK" && (
-          <>
-            <FormControl sx={{ m: 3 }} component="fieldset" variant="standard">
-              <FormGroup>
-                <FormControlLabel
-                  label="Naive"
-                  control={<Checkbox
-                    checked={benchmarkPlayers.NAIVE}
-                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)}
-                    name="NAIVE"
-                  />}
-                />
-                <FormControlLabel
-                  label="Simple"
-                  control={<Checkbox
-                    checked={benchmarkPlayers.SIMPLE}
-                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)}
-                    name="SIMPLE"
-                  />}
-                />
-                <FormControlLabel
-                  label="Context"
-                  control={<Checkbox
-                    checked={benchmarkPlayers.CONTEXT}
-                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)}
-                    name="CONTEXT"
-                  />}
-                />
-                <FormControlLabel
-                  label="ContextV2"
-                  control={<Checkbox
-                    checked={benchmarkPlayers.CONTEXTV2}
-                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)}
-                    name="CONTEXTV2"
-                  />}
-                />
-                <FormControlLabel
-                  label="CSP"
-                  control={<Checkbox
-                    checked={benchmarkPlayers.CSP}
-                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)}
-                    name="CSP"
-                  />}
-                />
-                <FormControlLabel
-                  label="Combined"
-                  control={<Checkbox
-                    checked={benchmarkPlayers.COMBINED}
-                    onChange={e => onBenchmarkPlayersChange(e.target.name, e.target.checked)}
-                    name="COMBINED"
-                  />}
-                />
-              </FormGroup>
-            </FormControl>
-            <Button onClick={benchmarkBot} variant="outlined">
-              Benchmark Bot
-            </Button>
-            <div>
-              <TextField
-                label="Benchmark Games"
-                type="number"
-                value={benchmarkGames}
-                onChange={({ target }) => setBenchmarkGames(parseInt(target.value ?? 0))}
-              />
-              <BenchmarkComp
-                benchmarkResults={benchmarkResults}
-              />
-            </div>
           </>
         )}
       </div>
