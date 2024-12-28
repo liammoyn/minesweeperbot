@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Board, Displayer, Space, Coord } from "../minesweeper/types";
-import { ReactDisplayerComp } from './reactDisplayer';
+import { Board, Space, Coord } from "../minesweeper/types";
 import { Button } from '@mui/material';
 import { getBoardFromString } from '../minesweeper/boardStringInterpretor';
 import { updateSpaceCoordsAndBombsNear } from '../utils/gridUtils';
 import { isSame, spaceToCoord } from '../utils/spaceUtils';
+import ReactBoard from './ReactBoard';
 
-interface EditorDisplayerCompProps {
+
+interface EditorOptionsProps {
     board: Board | null,
     onCellClick: (coord: Space, isRightClick: boolean) => void,
     onBoardChange: (newBoard: Board) => void,
@@ -14,7 +15,7 @@ interface EditorDisplayerCompProps {
 
 const SELECTED_COLOR = "/#FA0"
 
-export const EditorDisplayerComp = ({ board, onCellClick, onBoardChange }: EditorDisplayerCompProps) => {
+const EditorOptions = ({ board, onCellClick, onBoardChange }: EditorOptionsProps) => {
     const [selectedCoords, setSelectedCoords] = useState<Coord[]>([]);
 
     useEffect(() => {
@@ -190,7 +191,7 @@ export const EditorDisplayerComp = ({ board, onCellClick, onBoardChange }: Edito
 
     return (
         <div style={{ display: "flex", flexFlow: "column", alignItems: "center" }}>
-            <ReactDisplayerComp
+            <ReactBoard
                 board={board}
                 onCellClick={onSquareClick}
                 showBomb={true}
@@ -203,17 +204,4 @@ export const EditorDisplayerComp = ({ board, onCellClick, onBoardChange }: Edito
     )
 }
 
-const editorDisplayer = (onBoardChange: (board: Board) => void, displayDelay: number, stepResolve: (() => Promise<void>) | null): Displayer => {
-    return {
-        displayBoard: (board: Board) => {
-            onBoardChange(board);
-            if (stepResolve) {
-                return stepResolve()
-            } else {
-                return new Promise(resolve => setTimeout(resolve, displayDelay));
-            }
-        }
-    }
-}
-
-export default editorDisplayer;
+export default EditorOptions

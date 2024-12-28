@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import consoleDisplayer, { getBoardString } from "./displayers/consoleDisplayer"
 import naivePlayer from "./players/naivePlayer"
-import reactDisplayer, { ReactDisplayerComp } from "./displayers/reactDisplayer"
+import reactDisplayer from "./displayers/reactDisplayer"
 import noneDisplayer from "./displayers/noneDisplayer"
 import minesweeper from './minesweeper/minesweeper';
 import { getNewBoard } from './minesweeper/boardGenerator';
@@ -12,9 +12,7 @@ import simplePlayer from './players/simplePlayer';
 import { getBoardFromString, getStringFromBoard } from './minesweeper/boardStringInterpretor';
 import contextAwarePlayer from './players/contextAwarePlayer';
 import contextAwarePlayerV2 from './players/contextAwarePlayerV2';
-import benchmarkDisplayer from './displayers/benchmarkDisplayer';
 import { spaceToCoord } from './utils/spaceUtils';
-import editorDisplayer, { EditorDisplayerComp } from './displayers/editorDisplayer';
 import './App.css';
 import cspPlayer from './players/cspPlayer';
 import combinedPlayer from './players/combinedPlayer';
@@ -24,6 +22,8 @@ import Benchmark from './pages/Benchmark';
 import Editor from './pages/Editor';
 import BenchmarkComp from './components/BenchmarkComp';
 import BoardSelector from './components/BoardSelector';
+import ReactBoard from './components/ReactBoard';
+import EditorOptions from './components/EditorOptions';
 
 enum Page {
   "BENCHMARK",
@@ -85,11 +85,11 @@ const App = () => {
         setDisplayer(reactDisplayer(setBoard, displayDelay, useStepper ? onWaitForNextStep : null));
         break;
       case "BENCHMARK":
-        setDisplayer(benchmarkDisplayer());
+        setDisplayer(noneDisplayer);
         break;
       case "EDITOR":
         setBoard(getBoardFromString("ooooboooo"))
-        setDisplayer(editorDisplayer(setBoard, displayDelay, useStepper ? onWaitForNextStep : null));
+        setDisplayer(reactDisplayer(setBoard, displayDelay, useStepper ? onWaitForNextStep : null));
         break;
     }
   }, [displayerId, playerId, useStepper])
@@ -399,7 +399,7 @@ const App = () => {
         <div style={{ paddingTop: "20px", paddingBottom: "20px" }}>
           {displayerId === "REACT" ? (
             <div>
-              <ReactDisplayerComp
+              <ReactBoard
                 board={board}
                 onCellClick={onCellClick}
                 showBomb={playerId !== "USER"}
@@ -407,7 +407,8 @@ const App = () => {
             </div>
           ) : displayerId === "EDITOR" ? (
             <div>
-              <EditorDisplayerComp
+              {/* TODO: Remove React board from editor options */}
+              <EditorOptions
                 board={board}
                 onCellClick={onCellClick}
                 onBoardChange={onEditorBoardChange}

@@ -1,4 +1,3 @@
-import { getBoardString } from "../displayers/consoleDisplayer";
 import { getStringFromBoard } from "../minesweeper/boardStringInterpretor";
 import { Board, Move, Player, Space, Coord } from "../minesweeper/types";
 import { getAdjacentTs, getCrossSection, isNeighborS } from "../utils/gridUtils";
