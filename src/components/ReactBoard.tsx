@@ -2,7 +2,7 @@ import { Board, Space } from "../minesweeper/types";
 
 interface ReactBoardProps {
     board: Board | null,
-    onCellClick: (space: Space, isRightClick: boolean, isShiftClick: boolean) => void,
+    onCellClick?: (space: Space, isRightClick: boolean, isShiftClick: boolean) => void,
     showBomb: boolean,
 }
 
@@ -57,7 +57,7 @@ const ReactBoard = ({ board, onCellClick, showBomb }: ReactBoardProps) => {
             bombsNear: ${boardSpace?.bombsNear},
             highlightColor: ${boardSpace?.highlightColor},
         }`)
-        if (boardSpace != null) {
+        if (boardSpace != null && onCellClick) {
             // Send event to parent that will run take turn
             onCellClick(boardSpace!!, isRightClick, isShiftClick)
         }

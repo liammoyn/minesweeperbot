@@ -5,9 +5,10 @@ import { BoardConfiguration } from "../minesweeper/types";
 interface BoardSelectorProps {
     boardConfig: BoardConfiguration,
     onBoardConfigChange: (bc: BoardConfiguration) => void
+    onApply?: () => void
 }
 
-const BoardSelector = ({ boardConfig, onBoardConfigChange }: BoardSelectorProps) => {
+const BoardSelector = ({ boardConfig, onBoardConfigChange, onApply }: BoardSelectorProps) => {
     const [height, setHeight] = useState(5);
     const [width, setWidth] = useState(5);
     const [bombs, setBombs] = useState(5);
@@ -68,7 +69,7 @@ const BoardSelector = ({ boardConfig, onBoardConfigChange }: BoardSelectorProps)
                         type="string"
                         value={customBoardString}
                         onChange={({ target }) => onBoardStringChange(target.value as unknown as string)}
-                        // onKeyDown={(e) => e.keyCode === 13 && setBoard(getBoardFromString(customBoardString))}
+                        onKeyDown={(e) => e.keyCode === 13 && onApply && onApply()}
                     />
                 </div>
             ) : (
