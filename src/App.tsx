@@ -1,32 +1,25 @@
 import { useEffect, useState } from 'react';
-import consoleDisplayer, { getBoardString } from "./displayers/consoleDisplayer"
-import naivePlayer from "./players/naivePlayer"
+import consoleDisplayer from "./displayers/consoleDisplayer"
 import reactDisplayer from "./displayers/reactDisplayer"
 import noneDisplayer from "./displayers/noneDisplayer"
 import minesweeper from './minesweeper/minesweeper';
 import { getNewBoard } from './minesweeper/boardGenerator';
-import { Button, Checkbox, Drawer, FormControl, FormControlLabel, FormGroup, List, ListItem, ListItemButton, ListItemText, MenuItem, Select, TextField } from '@mui/material';
-import { Board, Displayer, Player, Move, GameState, Space, BenchmarkResults, BenchmarkResult, BoardConfiguration } from './minesweeper/types';
-import userPlayer from './players/userPlayer';
-import simplePlayer from './players/simplePlayer';
+import { Button, Checkbox, Drawer, List, ListItem, ListItemButton, ListItemText, MenuItem, Select, TextField } from '@mui/material';
+import { Board, Displayer, Player, Move, Space, BoardConfiguration } from './minesweeper/types';
 import { getBoardFromString, getStringFromBoard } from './minesweeper/boardStringInterpretor';
-import contextAwarePlayer from './players/contextAwarePlayer';
-import contextAwarePlayerV2 from './players/contextAwarePlayerV2';
 import { spaceToCoord } from './utils/spaceUtils';
 import './App.css';
-import cspPlayer from './players/cspPlayer';
 import combinedPlayer from './players/combinedPlayer';
 import BotViewer from './pages/BotViewer';
 import UserPlay from './pages/UserPlay';
 import Benchmark from './pages/Benchmark';
 import Editor from './pages/Editor';
-import BenchmarkComp from './components/BenchmarkComp';
 import BoardSelector from './components/BoardSelector';
 import ReactBoard from './components/ReactBoard';
 import EditorOptions from './components/EditorOptions';
 import { getPlayerForId } from './utils/playerUtils';
 
-enum Page {
+enum PageId {
   "BENCHMARK",
   "BOTVIEWER",
   "USERPLAY",
@@ -34,7 +27,8 @@ enum Page {
 }
 
 const App = () => {
-  const [currentPage, setCurrentPage] = useState<Page>(Page.BOTVIEWER)
+  const [currentPage, setCurrentPage] = useState<JSX.Element>()
+  const [currentPageId, setCurrentPageId] = useState<PageId>(PageId.BOTVIEWER)
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   const [boardConfig, setBoardConfig] = useState<BoardConfiguration>({
@@ -89,6 +83,23 @@ const App = () => {
   useEffect(() => {
     setPlayer(getPlayerForId(playerId, true, delayMillis, onUserMove))
   }, [playerId])
+
+  useEffect(() => {
+    if (currentPageId == PageId.BOTVIEWER) {
+      setCurrentPage(<BotViewer />)
+    } else if (currentPageId == PageId.USERPLAY) {
+      setCurrentPage(<UserPlay />)
+    } else if (currentPageId == PageId.BENCHMARK) {
+      setDisplayerId("BENCHMARK")
+      setCurrentPage(
+        <Benchmark
+          boardConfig={boardConfig}
+        />
+      )
+    } else if (currentPageId == PageId.EDITOR) {
+      setCurrentPage(<Editor />)
+    }
+  }, [currentPageId])
 
   const runMinesweeper = () => {
     let newBoard: Board
@@ -145,21 +156,10 @@ const App = () => {
     })
   }
 
-  
 
-  const getPage = (currentPage: Page) => {
-    if (currentPage == Page.BOTVIEWER) {
-      return (<BotViewer />)
-    } else if (currentPage == Page.USERPLAY) {
-      return (<UserPlay />)
-    } else if (currentPage == Page.BENCHMARK) {
-      setDisplayerId("BENCHMARK")
-      return (<Benchmark
-        boardConfig={boardConfig}
-      />)
-    } else if (currentPage == Page.EDITOR) {
-      return (<Editor />)
-    }
+
+  const getPage = (currentPage: PageId) => {
+
   }
 
   return (
@@ -167,22 +167,22 @@ const App = () => {
       <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
         <List>
           <ListItem>
-            <ListItemButton onClick={() => setCurrentPage(Page.BOTVIEWER)}>
+            <ListItemButton onClick={() => setCurrentPageId(PageId.BOTVIEWER)}>
               <ListItemText primary={"Bot Viewer"} />
             </ListItemButton>
           </ListItem>
           <ListItem>
-            <ListItemButton onClick={() => setCurrentPage(Page.USERPLAY)}>
+            <ListItemButton onClick={() => setCurrentPageId(PageId.USERPLAY)}>
               <ListItemText primary={"User Play"} />
             </ListItemButton>
           </ListItem>
           <ListItem>
-            <ListItemButton onClick={() => setCurrentPage(Page.BENCHMARK)}>
+            <ListItemButton onClick={() => setCurrentPageId(PageId.BENCHMARK)}>
               <ListItemText primary={"Benchmark"} />
             </ListItemButton>
           </ListItem>
           <ListItem>
-            <ListItemButton onClick={() => setCurrentPage(Page.EDITOR)}>
+            <ListItemButton onClick={() => setCurrentPageId(PageId.EDITOR)}>
               <ListItemText primary={"Editor"} />
             </ListItemButton>
           </ListItem>
@@ -194,7 +194,7 @@ const App = () => {
         </Button>
       </div>
       <div>
-        {getPage(currentPage)}
+        {currentPage}
       </div>
       <div>
         <BoardSelector
