@@ -120,19 +120,23 @@ const BotViewer = ({ boardConfig, onBoardConfigChange }: BotViewerProps) => {
                     Play Minesweeper
                 </Button>
             </div>
-            {useStepper && (
-                <div style={{ paddingTop: "10px" }}>
-                    <Button onClick={stepForward} variant="outlined">
-                        Step
-                    </Button>
+            {currentBoard != null && (
+                <div>
+                    {useStepper && (
+                        <div style={{ paddingTop: "10px" }}>
+                            <Button onClick={stepForward} variant="outlined">
+                                Step
+                            </Button>
+                        </div>
+                    )}
+                    <ReactBoard
+                        board={currentBoard}
+                        showBomb={true}
+                    />
+                    {showBoardString && (
+                        <div>{currentBoardString}</div>
+                    )}
                 </div>
-            )}
-            <ReactBoard
-                board={currentBoard}
-                showBomb={true}
-            />
-            {showBoardString && (
-                <div>{currentBoardString}</div>
             )}
         </>
     )
