@@ -4,7 +4,7 @@ import { Board, BoardConfiguration, Displayer, Player } from "../minesweeper/typ
 import { useEffect, useState } from "react"
 import combinedPlayer from "../players/combinedPlayer"
 import reactDisplayer from "../displayers/reactDisplayer"
-import { getPlayerForId } from "../utils/playerUtils"
+import { getBoardFromConfig, getPlayerForId } from "../utils/playerUtils"
 import { getBoardFromString, getStringFromBoard } from "../minesweeper/boardStringInterpretor"
 import { getNewBoard } from "../minesweeper/boardGenerator"
 import minesweeper from "../minesweeper/minesweeper"
@@ -48,19 +48,6 @@ const BotViewer = ({ boardConfig, onBoardConfigChange }: BotViewerProps) => {
         let newBoard: Board = getBoardFromConfig(boardConfig)
         setCurrentBoard(newBoard)
         minesweeper(newBoard, displayer, player);
-    }
-
-    const getBoardFromConfig = (bc: BoardConfiguration): Board => {
-        let newBoard: Board
-        // if (displayerId === "EDITOR" && (board?.gameState === "NEW" || board?.gameState === "IN_PROGRESS")) {
-        //   newBoard = board!!
-        // } else if (useCustomBoard) {
-        if (bc?.gridString != null) {
-            newBoard = getBoardFromString(bc.gridString)
-        } else {
-            newBoard = getNewBoard(bc.width, bc.height, bc.bombs)
-        }
-        return newBoard
     }
 
     const stepForward = () => {
