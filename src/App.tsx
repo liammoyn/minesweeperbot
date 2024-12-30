@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Button, Drawer, List, ListItem, ListItemButton, ListItemText } from '@mui/material';
+import { Button, Drawer, IconButton, List, ListItem, ListItemButton, ListItemText } from '@mui/material';
+import { Menu } from '@material-ui/icons';
 import { BoardConfiguration } from './minesweeper/types';
 import BotViewer from './pages/BotViewer';
 import UserPlay from './pages/UserPlay';
@@ -59,38 +60,54 @@ const App = () => {
   }, [currentPageId, boardConfig])
 
   return (
-    <div className="App" style={{ paddingTop: "50px" }}>
-      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
-        <List>
-          <ListItem>
-            <ListItemButton onClick={() => setCurrentPageId(PageId.BOTVIEWER)}>
-              <ListItemText primary={"Bot Viewer"} />
-            </ListItemButton>
-          </ListItem>
-          <ListItem>
-            <ListItemButton onClick={() => setCurrentPageId(PageId.USERPLAY)}>
-              <ListItemText primary={"User Play"} />
-            </ListItemButton>
-          </ListItem>
-          <ListItem>
-            <ListItemButton onClick={() => setCurrentPageId(PageId.BENCHMARK)}>
-              <ListItemText primary={"Benchmark"} />
-            </ListItemButton>
-          </ListItem>
-          <ListItem>
-            <ListItemButton onClick={() => setCurrentPageId(PageId.EDITOR)}>
-              <ListItemText primary={"Editor"} />
-            </ListItemButton>
-          </ListItem>
-        </List>
-      </Drawer>
-      <div>
-        <Button onClick={() => setDrawerOpen(true)}>
-          Open Drawer
-        </Button>
+    <div>
+      <div style={{ padding: "20px" }}>
+      <IconButton
+        color="inherit"
+        aria-label="open drawer"
+        onClick={() => setDrawerOpen(true)}
+        edge="start"
+        sx={[
+          {
+            mr: 2,
+          },
+          drawerOpen && { display: 'none' },
+        ]}
+      >
+        <Menu />
+      </IconButton>
       </div>
-      <div>
-        {currentPage}
+      <div style={{ textAlign: "center", paddingTop: "10px" }}>
+        <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+          <List>
+            <ListItem>
+              <ListItemButton onClick={() => setCurrentPageId(PageId.BOTVIEWER)}>
+                <ListItemText primary={"Bot Viewer"} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem>
+              <ListItemButton onClick={() => setCurrentPageId(PageId.USERPLAY)}>
+                <ListItemText primary={"User Play"} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem>
+              <ListItemButton onClick={() => setCurrentPageId(PageId.BENCHMARK)}>
+                <ListItemText primary={"Benchmark"} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem>
+              <ListItemButton onClick={() => setCurrentPageId(PageId.EDITOR)}>
+                <ListItemText primary={"Editor"} />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Drawer>
+        <div>
+
+        </div>
+        <div>
+          {currentPage}
+        </div>
       </div>
     </div>
   );
