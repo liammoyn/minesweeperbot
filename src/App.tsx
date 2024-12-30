@@ -103,9 +103,6 @@ const App = () => {
           </List>
         </Drawer>
         <div>
-
-        </div>
-        <div>
           {currentPage}
         </div>
       </div>

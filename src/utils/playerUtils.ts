@@ -36,9 +36,6 @@ export const getPlayerForId = (
 
 export const getBoardFromConfig = (bc: BoardConfiguration): Board => {
     let newBoard: Board
-    // if (displayerId === "EDITOR" && (board?.gameState === "NEW" || board?.gameState === "IN_PROGRESS")) {
-    //   newBoard = board!!
-    // } else if (useCustomBoard) {
     if (bc?.gridString != null) {
         newBoard = getBoardFromString(bc.gridString)
     } else {
