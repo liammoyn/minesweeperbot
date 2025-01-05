@@ -6,15 +6,9 @@ import BotViewer from './pages/BotViewer';
 import UserPlay from './pages/UserPlay';
 import Benchmark from './pages/Benchmark';
 import Editor from './pages/Editor';
+import { getPageTitle, PageId } from './utils/pageUtils';
 
 import './App.css';
-
-enum PageId {
-  "BENCHMARK",
-  "BOTVIEWER",
-  "USERPLAY",
-  "EDITOR"
-}
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState<JSX.Element>()
@@ -60,25 +54,28 @@ const App = () => {
   }, [currentPageId, boardConfig])
 
   return (
-    <div>
+    <div style={{ display: "flex", flexDirection: "row", alignItems: "start" }}>
       <div style={{ padding: "20px" }}>
-      <IconButton
-        color="inherit"
-        aria-label="open drawer"
-        onClick={() => setDrawerOpen(true)}
-        edge="start"
-        sx={[
-          {
-            mr: 2,
-          },
-          drawerOpen && { display: 'none' },
-        ]}
-      >
-        <Menu />
-      </IconButton>
+        <IconButton
+          color="inherit"
+          aria-label="open drawer"
+          onClick={() => setDrawerOpen(true)}
+          edge="start"
+          sx={[
+            {
+              mr: 2,
+            },
+            drawerOpen && { display: 'none' },
+          ]}
+        >
+          <Menu />
+        </IconButton>
       </div>
-      <div style={{ textAlign: "center", paddingTop: "10px" }}>
+      <div style={{ textAlign: "center", paddingTop: "10px", flex: 1 }}>
         <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+          <div style={{ textAlign: "center", fontSize: "1.2em", borderBottom: "2px solid gray" }} >
+            {getPageTitle(currentPageId)}
+          </div>
           <List>
             <ListItem>
               <ListItemButton onClick={() => setCurrentPageId(PageId.BOTVIEWER)}>
@@ -103,6 +100,9 @@ const App = () => {
           </List>
         </Drawer>
         <div>
+          <div style={{  padding: "5px", paddingBottom: "15px" }}>
+            {getPageTitle(currentPageId)}
+          </div>
           {currentPage}
         </div>
       </div>

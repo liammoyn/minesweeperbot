@@ -78,7 +78,7 @@ const Benchmark = ({ boardConfig }: BenchmarkProps) => {
     }
 
     return (
-        <>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
             <FormControl sx={{ m: 3 }} component="fieldset" variant="standard">
                 <FormGroup>
                     <FormControlLabel
@@ -131,21 +131,22 @@ const Benchmark = ({ boardConfig }: BenchmarkProps) => {
                     />
                 </FormGroup>
             </FormControl>
-            <Button onClick={benchmarkBot} variant="outlined">
-                Benchmark Bot
-            </Button>
-            <div>
-                <TextField
-                    label="Benchmark Games"
-                    type="number"
-                    value={benchmarkGames}
-                    onChange={({ target }) => setBenchmarkGames(parseInt(target.value ?? 0))}
-                />
-                <BenchmarkComp
+            <TextField
+                label="Benchmark Games"
+                type="number"
+                value={benchmarkGames}
+                onChange={({ target }) => setBenchmarkGames(parseInt(target.value ?? 0))}
+            />
+            <div style={{ padding: "10px" }}>
+                <Button onClick={benchmarkBot} variant="outlined">
+                    Benchmark Bot
+                </Button>
+            </div>
+
+            <BenchmarkComp
                     benchmarkResults={benchmarkResults}
                 />
-            </div>
-        </>
+        </div>
     )
 }
 
