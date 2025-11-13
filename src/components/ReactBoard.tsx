@@ -91,7 +91,7 @@ const ReactBoard = ({ board, onCellClick, showBomb }: ReactBoardProps) => {
                                 {
                                     space.isOpen 
                                     ? space.isBomb
-                                        ? "x"
+                                        ? "!"
                                         : space.bombsNear 
                                     : space.isFlagged
                                         ? "F"

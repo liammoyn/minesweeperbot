@@ -108,7 +108,7 @@ const BotViewer = ({ boardConfig, onBoardConfigChange }: BotViewerProps) => {
                 </Button>
             </div>
             {currentBoard != null && (
-                <div>
+                <div style={{ paddingBottom: "20px" }}>
                     {useStepper && (
                         <div style={{ paddingTop: "10px" }}>
                             <Button onClick={stepForward} variant="outlined">
